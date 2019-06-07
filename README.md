@@ -1,5 +1,7 @@
 This is test branch to explore Peppy codes on Mac modified by sakuma. Function may be broken.
 
+* Press P to dump xyz coordinates of N CA C O into Assets/Resources
+
 # molpath
 
 VR molecular modelling pathfinding project

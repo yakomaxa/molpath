@@ -963,7 +963,7 @@ public class PolyPepManager : MonoBehaviour {
 		//UpdateKeepGameObjectCloseToPlayer(mySnapshotCamera, 10.0f);
 	        if (Input.GetKey(KeyCode.P))
 		{
-		       DumpXYZ();
+		       DumpXYZ2();
 		}
 
 		if (Input.GetKey(KeyCode.Escape))
