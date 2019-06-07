@@ -891,6 +891,59 @@ public class PolyPepManager : MonoBehaviour {
 		SceneManager.LoadScene(m_Scene.name);
 	}
 
+        public void DumpXYZ(){
+               foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+               {
+                 int nres = _ppb.numResidues;
+		 for ( int resid = 1; resid < nres; resid++)
+		  {
+                   GameObject amide = _ppb.GetAmideForResidue(resid);
+                   Vector3 x10am = amide.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10am.ToString());
+
+		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
+                   Debug.Log("print position" + calpha.transform.position);
+                   Vector3 x10ca = calpha.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10ca.ToString());
+
+		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
+                   Debug.Log("print position" + carbonyl.transform.position);
+                   Vector3 x10car = carbonyl.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10car.ToString());
+		   }
+
+        	}
+	}
+
+        public void DumpXYZ2(){
+               foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+               {
+                 int nres = _ppb.numResidues;
+		 for ( int resid = 1; resid < nres; resid++)
+		  {
+                   GameObject amide = _ppb.GetAmideForResidue(resid);
+                   Vector3 x10am = amide.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10am.ToString());
+
+		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
+                   Debug.Log("print position" + calpha.transform.position);
+                   Vector3 x10ca = calpha.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10ca.ToString());
+
+		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
+                   Debug.Log("print position" + carbonyl.transform.position);
+                   Vector3 x10car = carbonyl.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10car.ToString());
+
+                   Vector3 x10posCO = carbonyl.transform.Find("tf_O/O_carbonyl").position*10.0f;
+		   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10posCO.ToString());
+		   }
+
+        	}
+	}
+
+
+
 	public void AppQuit()
 	{
 		Debug.Log("Application.Quit");
@@ -908,6 +961,11 @@ public class PolyPepManager : MonoBehaviour {
 		//UpdateKeepGameObjectCloseToPlayer(UI, 6.0f);
 		UpdateKeepGameObjectAccessible(mySnapshotCamera, 0.2f, 5.0f);
 		//UpdateKeepGameObjectCloseToPlayer(mySnapshotCamera, 10.0f);
+	        if (Input.GetKey(KeyCode.P))
+		{
+		       DumpXYZ();
+		}
+
 		if (Input.GetKey(KeyCode.Escape))
 		{
 			AppQuit();
