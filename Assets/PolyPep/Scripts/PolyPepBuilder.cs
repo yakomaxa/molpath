@@ -95,8 +95,8 @@ public class PolyPepBuilder : MonoBehaviour {
 
 	{
 		// read peptide data from file
-		bool readExternalPeptideData = false; 
-		string filename = "Assets/PolyPep/Data/1l2y_phi_psi.txt";
+		bool readExternalPeptideData = true; 
+		string filename = "Assets/PolyPep/Data/1350_phi_psi.txt";
 
 		if (readExternalPeptideData)
 		{
