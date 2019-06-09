@@ -8,6 +8,13 @@ using UnityEngine.Assertions;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+public class PeptideData
+{
+	public string residPD;
+	public float phiPD;
+	public float psiPD;
+}
+
 public class PolyPepBuilder : MonoBehaviour {
 
 	public GameObject amidePf;
@@ -37,6 +44,9 @@ public class PolyPepBuilder : MonoBehaviour {
 	public int secondaryStructure { get; set; } // = 0;
 
 	public int numResidues = 0;
+
+	public List<PeptideData> myPeptideDataList = new List<PeptideData>(); 
+
 
 	public GameObject[] polyArr;
 	private int polyLength;
@@ -84,21 +94,27 @@ public class PolyPepBuilder : MonoBehaviour {
 	void Start()
 
 	{
-		//Debug.Log("LOAD FILE = " + LoadPhiPsiData("Assets/Data/253l_phi_psi.txt"));
+		// read peptide data from file
+		bool readExternalPeptideData = false; 
+		string filename = "Assets/PolyPep/Data/1l2y_phi_psi.txt";
+
+		if (readExternalPeptideData)
+		{
+			// reads data into and overwrites numResidues
+			Debug.Log("LOAD FILE = " + LoadPhiPsiData(filename));
+			//foreach ( PeptideData _peptideData in peptideDataRead)
+			//{
+			//	Debug.Log(_peptideData.residPD + " " + _peptideData.phiPD + " " + _peptideData.psiPD);
+			//}
+		}
+		
 
 		shaderStandard = Shader.Find("Standard");
 		shaderToonOutline = Shader.Find("Toon/Basic Outline");
 
 		buildPolypeptideChain();
 
-		//for (int resid = 0; resid < numResidues; resid++)
-		//{
-		//	sideChainBuilder.BuildSideChain(gameObject, resid, "PHE"); // ppb_cs.chainArr[0].GetComponent<Residue>());
-		//}
 
-		//sideChainBuilder.BuildSideChain(gameObject, 0, "PRO");
-		//sideChainBuilder.BuildSideChain(gameObject, 3, "ASP");
-		//sideChainBuilder.BuildSideChain(gameObject, 5, "GLU");
 
 		if (false)
 		{
@@ -124,9 +140,19 @@ public class PolyPepBuilder : MonoBehaviour {
 		// placeholder: should be created and updated on tick
 		//InvokeRepeating("UpdateDistanceConstraintGfx", 0, 0.05f);
 
-		//Debug.Log("LOAD FILE = " + Load("Assets/Data/253l_phi_psi.txt"));
-		//disablePhiPsiUIInput = true;
-		//Debug.Log("LOAD FILE = " + LoadPhiPsiData("Assets/Data/1xda_phi_psi.txt")); 
+		if (readExternalPeptideData)
+		{
+			// push sequence and phi psi data to peptide
+			for (int i = 0; i < myPeptideDataList.Count; i++)
+			{
+				PeptideData _pd = myPeptideDataList[i];
+				//Debug.Log(i + " " + _pd.residPD + " " + _pd.phiPD + " " + _pd.psiPD);
+				sideChainBuilder.BuildSideChain(gameObject, i, _pd.residPD);
+				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD);
+				chainArr[i].GetComponent<Residue>().drivePhiPsiOn = true;
+			}
+			UpdatePhiPsiDrives();
+		}
 
 		secondaryStructure = 0;
 
@@ -232,12 +258,16 @@ public class PolyPepBuilder : MonoBehaviour {
 
 			{
 				// turn off shadows / renderer
+				// makes surprisingly little difference
 				Renderer[] allChildren = GetComponentsInChildren<Renderer>();
 				foreach (Renderer child in allChildren)
 				{
 					Renderer myRenderer = child.GetComponent<Renderer>();
 					myRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 					myRenderer.receiveShadows = false;
+					// performance ?
+					myRenderer.allowOcclusionWhenDynamic = false;
+
 				}
 			}
 
@@ -298,6 +328,7 @@ public class PolyPepBuilder : MonoBehaviour {
 			float radiusH = 0.75f;
 			float radiusS = 1.1f;
 			float radiusR = 1.1f;
+			float radiusFreeze = 70.0f;
 
 			Transform[] allChildren = GetComponentsInChildren<Transform>();
 			foreach (Transform child in allChildren)
@@ -329,8 +360,12 @@ public class PolyPepBuilder : MonoBehaviour {
 						//atomDisplayScale = radiusS * scaleVDW;
 						ScaleAtom(child, scaleVDW, radiusS);
 						break;
+					case "freeze":
+						//atomDisplayScale = radiusS * scaleVDW;
+						ScaleFreeze(child, scaleVDW, radiusFreeze);
+						break;
 				}
-				
+
 			}
 		}
 	}
@@ -346,6 +381,14 @@ public class PolyPepBuilder : MonoBehaviour {
 		myAtom.GetComponent<SphereCollider>().radius = 1.1f * relativeRadiusAtomType / scaleVDW; 
 		// 1.1f is magic number
 
+	}
+
+	private void ScaleFreeze(Transform myAtom, float scaleVDW, float relativeRadiusAtomType)
+	{
+		// CPK / VDW slider changes rendering
+		// min freeze radius clamped at empirical value (looks better)
+		float atomDisplayScale = Mathf.Max(50.0f, relativeRadiusAtomType * scaleVDW);
+		myAtom.transform.localScale = new Vector3(atomDisplayScale, atomDisplayScale, atomDisplayScale);
 	}
 
 	public void UpdateAllDrag()
@@ -364,21 +407,49 @@ public class PolyPepBuilder : MonoBehaviour {
 		}
 	}
 
+	public void UpdateAllFreeze(bool freeze)
+	{
+		for (int resid = 0; resid < numResidues; resid++)
+		{
+			Residue residue = chainArr[resid].GetComponent<Residue>();
+			if (residue.residueSelected)
+			{
+				SetRbDragFreeze(GetAmideForResidue(resid), freeze);
+				SetRbDragFreeze(GetCalphaForResidue(resid), freeze);
+				SetRbDragFreeze(GetCarbonylForResidue(resid), freeze);
+
+				//Debug.Log(chainArr[resid].GetComponent<Residue>().sidechain);
+				foreach (GameObject _sidechainGO in chainArr[resid].GetComponent<Residue>().sideChainList)
+				{
+					SetRbDragFreeze(_sidechainGO, freeze);
+				}
+
+				residue.residueFrozen = freeze;
+			}
+		}
+	}
+
+
 	public void UpdateAllDragStrength(float dragStrength)
 	{
 		for (int resid = 0; resid < numResidues; resid++)
 		{
-			SetRbDragStrength(GetAmideForResidue(resid), dragStrength);
-			SetRbDragStrength(GetCalphaForResidue(resid), dragStrength);
-			SetRbDragStrength(GetCarbonylForResidue(resid), dragStrength);
-
-			//Debug.Log(chainArr[resid].GetComponent<Residue>().sidechain);
-			foreach (GameObject _sidechainGO in chainArr[resid].GetComponent<Residue>().sideChainList)
+			Residue residue = chainArr[resid].GetComponent<Residue>();
+			if (!residue.residueFrozen)
 			{
-				SetRbDragStrength(_sidechainGO, dragStrength);
+				SetRbDragStrength(GetAmideForResidue(resid), dragStrength);
+				SetRbDragStrength(GetCalphaForResidue(resid), dragStrength);
+				SetRbDragStrength(GetCarbonylForResidue(resid), dragStrength);
+
+				//Debug.Log(chainArr[resid].GetComponent<Residue>().sidechain);
+				foreach (GameObject _sidechainGO in chainArr[resid].GetComponent<Residue>().sideChainList)
+				{
+					SetRbDragStrength(_sidechainGO, dragStrength);
+				}
 			}
 		}
 	}
+
 	void SetRbDrag(GameObject go)
 	{
 		if (myPolyPepManager.dragHigh)
@@ -407,7 +478,37 @@ public class PolyPepBuilder : MonoBehaviour {
 		go.GetComponent<Rigidbody>().angularDrag = value;
 	}
 
-	public void SetAllColliderIsTrigger(bool value)
+	void SetRbDragFreeze(GameObject go, bool freeze)
+	{
+
+		// use lerp to map to meaningful range
+		//float value = Mathf.Lerp(5, 25, dragStrength / 100);
+		if (freeze)
+		{
+			go.GetComponent<Rigidbody>().mass = Mathf.Infinity;
+			go.GetComponent<Rigidbody>().drag = Mathf.Infinity;
+			go.GetComponent<Rigidbody>().angularDrag = Mathf.Infinity;
+		}
+		else
+		{
+			go.GetComponent<Rigidbody>().mass = 1;
+			go.GetComponent<Rigidbody>().drag = 5;
+			go.GetComponent<Rigidbody>().angularDrag = 5;
+		}
+
+		UpdateMeshRendererFreeze(go, freeze);
+	}
+
+	void UpdateMeshRendererFreeze(GameObject go, bool freeze)
+	{
+		Transform _tf = go.transform.Find("Freeze");
+		if (_tf)
+		{
+			_tf.GetComponent<MeshRenderer>().enabled = freeze;
+		}
+	}
+
+public void SetAllColliderIsTrigger(bool value)
 	{
 		//for (int i = 0; i < polyLength; i++)
 		//{
@@ -418,14 +519,42 @@ public class PolyPepBuilder : MonoBehaviour {
 		//	}
 		//}
 
+		//if (value == true)
+		//{
+		//	Physics.IgnoreLayerCollision(LayerMask.NameToLayer("Atom"), LayerMask.NameToLayer("Atom"), true);
+		//}
+		//else
+		//{
+		//	Physics.IgnoreLayerCollision(LayerMask.NameToLayer("Atom"), LayerMask.NameToLayer("Atom"), false);
+		//}
+
+
 		Collider[] allChildren = GetComponentsInChildren<Collider>();
 		foreach (Collider childCollider in allChildren)
 		{
-			childCollider.isTrigger = value;
+			//childCollider.isTrigger = value;
+
+			//sidechain colliders  need to be explicitly set - bug
+			childCollider.isTrigger = false;
+
+			if (childCollider.gameObject.layer != LayerMask.NameToLayer("Hbond"))
+			{
+				if (value == true)
+				{
+					childCollider.gameObject.layer = LayerMask.NameToLayer("Water");
+				}
+				else
+				{
+					childCollider.gameObject.layer = LayerMask.NameToLayer("Atom");
+
+				}
+			}
+
 			if (childCollider.name.Contains("bond"))
 			{
 				// Debug.Log(childCollider.name);
 				// deletes ALL bond colliders!
+				// attempt at culling unused components
 				Destroy(childCollider);
 			}
 			
@@ -766,7 +895,16 @@ public class PolyPepBuilder : MonoBehaviour {
 								int targetAcceptorResid = acceptorGO.GetComponent<BackboneUnit>().residue;
 								//Debug.Log(resid + "---> " + targetAcceptorResid);
 								int offset = 2;
-								if ( ((resid + offset) < targetAcceptorResid) || ((resid - offset) > targetAcceptorResid) ) 
+                                //Debug.Log(gameObject.name + "---> " + acceptorGO.transform.root.name);
+                                //bool sameChain = (gameObject.name == acceptorGO.transform.root.name);
+                                bool sameChain = (gameObject.transform.root == acceptorGO.transform.root);
+                                bool notTooClose = (((resid + offset) < targetAcceptorResid) || ((resid - offset) > targetAcceptorResid));
+                                if (notTooClose)
+                                {
+                                    //Debug.Log(resid + "---> " + targetAcceptorResid);
+                                }
+                                //Debug.Log("->" + sameChain);
+                                if (!sameChain || (sameChain && notTooClose) )
 								{
 									foundAcceptor = true;
 									//DrawLine(donorHLocation, hit.point, Color.red, 0.02f);
@@ -1254,13 +1392,33 @@ public class PolyPepBuilder : MonoBehaviour {
 		float myPhi = float.Parse(line.Substring(12, 7));
 		float myPsi = float.Parse(line.Substring(20, 7));
 
+		if (myResid == 2)
+		{
+			// add default data for resid 1
+			PeptideData _peptideData = new PeptideData();
+			_peptideData.residPD = "XXX";
+			_peptideData.phiPD = 0f;
+			_peptideData.psiPD = 0f;
+			myPeptideDataList.Add(_peptideData);
+		}
 
 		Debug.Log("  resname = " + resName);
 		Debug.Log("  resid = " + myResid);
 		Debug.Log("  phi = " + myPhi);
 		Debug.Log("  psi = " + myPsi);
 
-		SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
+		{
+			// add data for current resid
+			PeptideData _peptideData = new PeptideData();
+			_peptideData.residPD = resName;
+			_peptideData.phiPD = myPhi;
+			_peptideData.psiPD = myPsi;
+			myPeptideDataList.Add(_peptideData);
+		}
+
+
+		//SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
+		numResidues = myResid;
 	}
 
 	public void UpdateResidueSelectionStartFromUI()
