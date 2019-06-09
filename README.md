@@ -1,5 +1,13 @@
 This is test branch to explore Peppy codes on Mac modified by sakuma. Function may be broken.
 
+2019/06/09
+
+* Extend (phi psi) to (phi psi omega), not well-checked.
+* Torque for omega is made so strong (x100 of phi psi).
+* Currently omega = 180.0f for external peptide. I need write custom phi psi omega reader.
+* "Out of range" for C-term residues prefab occurs.
+  
+2019/06/08
 * Press P to dump xyz coordinates of N CA C O into Assets/Resources
 
 # molpath
