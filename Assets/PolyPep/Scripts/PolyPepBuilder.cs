@@ -13,6 +13,7 @@ public class PeptideData
 	public string residPD;
 	public float phiPD;
 	public float psiPD;
+    public float omegaPD;
 }
 
 public class PolyPepBuilder : MonoBehaviour {
@@ -61,6 +62,7 @@ public class PolyPepBuilder : MonoBehaviour {
 
 	public JointDrive[] chainPhiJointDrives;
 	private JointDrive[] chainPsiJointDrives;
+    private JointDrive[] chainOmegaJointDrives;
 
 	public float hbondStrength = 0f; // updated by PolyPepManager
 
@@ -80,6 +82,8 @@ public class PolyPepBuilder : MonoBehaviour {
 
 
 	private bool disablePhiPsiUIInput = false;
+
+    private bool LockOmega = false;
 
 	Shader shaderStandard;
 	Shader shaderToonOutline;
@@ -148,7 +152,7 @@ public class PolyPepBuilder : MonoBehaviour {
 				PeptideData _pd = myPeptideDataList[i];
 				//Debug.Log(i + " " + _pd.residPD + " " + _pd.phiPD + " " + _pd.psiPD);
 				sideChainBuilder.BuildSideChain(gameObject, i, _pd.residPD);
-				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD);
+				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD, _pd.omegaPD);
 				chainArr[i].GetComponent<Residue>().drivePhiPsiOn = true;
 			}
 			UpdatePhiPsiDrives();
@@ -176,6 +180,7 @@ public class PolyPepBuilder : MonoBehaviour {
 			//
 			chainPhiJointDrives = new JointDrive[numResidues];
 			chainPsiJointDrives = new JointDrive[numResidues];
+            chainOmegaJointDrives = new JointDrive[numResidues];
 
 			for (int i = 0; i < numResidues; i++)
 			{
@@ -186,6 +191,11 @@ public class PolyPepBuilder : MonoBehaviour {
 				chainPsiJointDrives[i].maximumForce = 0.0f;
 				chainPsiJointDrives[i].positionDamper = 0;
 				chainPsiJointDrives[i].positionSpring = 0.0f;
+
+                chainOmegaJointDrives[i].maximumForce = 0.0f;
+                chainOmegaJointDrives[i].positionDamper = 0;
+                chainOmegaJointDrives[i].positionSpring = 0.0f;
+
 			}
 		}
 
@@ -623,7 +633,16 @@ public void SetAllColliderIsTrigger(bool value)
 		else if (go1.tag == "carbonyl")
 		{
 			//peptide bond
-			cj.angularXMotion = ConfigurableJointMotion.Locked;
+            if (LockOmega)
+            {
+            			cj.angularXMotion = ConfigurableJointMotion.Locked;
+            }
+            else
+            {
+                        cj.angularXMotion = ConfigurableJointMotion.Free;
+                        cj.angularXDrive = chainOmegaJointDrives[index / 3];
+                        cj.targetRotation = Quaternion.Euler(180 + 180, 0, 0); // default to 0 omega
+            }
 		}
 		cj.angularYMotion = ConfigurableJointMotion.Locked;
 		cj.angularZMotion = ConfigurableJointMotion.Locked;
@@ -1199,7 +1218,7 @@ public void SetAllColliderIsTrigger(bool value)
 		UpdatePhiPsiDrives();
 	}
 
-	public void SetPhiPsiTargetValuesForSelection(float phi, float psi)
+	public void SetPhiPsiTargetValuesForSelection(float phi, float psi,float omega)
 	{
 		// use 'painted' selection from controller i.e. controllerSelectOn
 		for (int resid = 0; resid < numResidues; resid++)
@@ -1207,25 +1226,33 @@ public void SetAllColliderIsTrigger(bool value)
 			Residue residue = chainArr[resid].GetComponent<Residue>();
 			if  (residue.IsResidueSelected())
 			{
-				SetPhiPsiTargetValuesForResidue(resid, phi, psi);
+				SetPhiPsiTargetValuesForResidue(resid, phi, psi, omega);
 				residue.drivePhiPsiOn = true;
 			}
 		}
 		UpdatePhiPsiDrives();
 	}
 
-	void SetPhiPsiTargetValuesForResidue(int resid, float phi, float psi)
+	void SetPhiPsiTargetValuesForResidue(int resid, float phi, float psi, float omega)
 	{
 		Residue residue = chainArr[resid].GetComponent<Residue>();
 
 		residue.phiTarget = phi;
 		residue.psiTarget = psi;
+        residue.omegaTarget = omega;
 
 		var cjPhi_NCa = GetAmideForResidue(resid).GetComponent<ConfigurableJoint>();
 		cjPhi_NCa.targetRotation = Quaternion.Euler(180.0f - phi, 0, 0);
 
 		var cjPsi_CaCO = GetCalphaForResidue(resid).GetComponent<ConfigurableJoint>();
 		cjPsi_CaCO.targetRotation = Quaternion.Euler(180.0f - psi, 0, 0);
+
+        if (!LockOmega) {
+                var cjOmega_CON = GetCarbonylForResidue(resid).GetComponent<ConfigurableJoint>();
+                cjOmega_CON.targetRotation = Quaternion.Euler(180.0f - omega, 0, 0);
+
+                 }
+
 	}
 
 	void UpdatePhiPsiDriveParamForResidue(int resid)
@@ -1235,6 +1262,11 @@ public void SetAllColliderIsTrigger(bool value)
 
 		var cjPsi_CaCO = GetCalphaForResidue(resid).GetComponent<ConfigurableJoint>();
 		cjPsi_CaCO.angularXDrive = chainPsiJointDrives[resid];
+
+        if (!LockOmega) {
+                var cjOmega_CON = GetCarbonylForResidue(resid).GetComponent<ConfigurableJoint>();
+                cjOmega_CON.angularXDrive = chainOmegaJointDrives[resid];
+        }
 
 		// wake rbs
 		// (sleeping rbs don't respond to changes in joint params)
@@ -1277,6 +1309,13 @@ public void SetAllColliderIsTrigger(bool value)
 				chainPsiJointDrives[resid].maximumForce = residue.drivePhiPsiTorqValue;
 				chainPsiJointDrives[resid].positionDamper = drivePhiPsiPosDamper;
 				chainPsiJointDrives[resid].positionSpring = residue.drivePhiPsiTorqValue;
+                if (!LockOmega)
+                {
+                    chainOmegaJointDrives[resid].maximumForce = residue.drivePhiPsiTorqValue * 100.0f;
+                    chainOmegaJointDrives[resid].positionDamper = drivePhiPsiPosDamper * 100.0f;
+                    chainOmegaJointDrives[resid].positionSpring = residue.drivePhiPsiTorqValue*100.0f;
+                }
+
 				//Debug.Log("PhiPsi Drive = ON ");
 			}
 			else
@@ -1291,6 +1330,12 @@ public void SetAllColliderIsTrigger(bool value)
 				chainPsiJointDrives[resid].positionDamper = drivePhiPsiPosDamperPassive;
 				chainPsiJointDrives[resid].positionSpring = 0.0f;
 				//Debug.Log("PhiPsi Drive = OFF ");
+                if (!LockOmega)
+                {
+                    chainOmegaJointDrives[resid].maximumForce = 0.0f;
+                    chainOmegaJointDrives[resid].positionDamper = drivePhiPsiPosDamperPassive ;
+                    chainOmegaJointDrives[resid].positionSpring = 0.0f;
+                }
 			}
 
 			UpdatePhiPsiDriveParamForResidue(resid);
@@ -1391,6 +1436,7 @@ public void SetAllColliderIsTrigger(bool value)
 		int myResid = int.Parse(residSplit[0]);
 		float myPhi = float.Parse(line.Substring(12, 7));
 		float myPsi = float.Parse(line.Substring(20, 7));
+        float myOmega = 180.0f ;
 
 		if (myResid == 2)
 		{
@@ -1399,6 +1445,7 @@ public void SetAllColliderIsTrigger(bool value)
 			_peptideData.residPD = "XXX";
 			_peptideData.phiPD = 0f;
 			_peptideData.psiPD = 0f;
+            _peptideData.omegaPD = 0f;
 			myPeptideDataList.Add(_peptideData);
 		}
 
@@ -1413,6 +1460,7 @@ public void SetAllColliderIsTrigger(bool value)
 			_peptideData.residPD = resName;
 			_peptideData.phiPD = myPhi;
 			_peptideData.psiPD = myPsi;
+            _peptideData.omegaPD = myOmega;
 			myPeptideDataList.Add(_peptideData);
 		}
 

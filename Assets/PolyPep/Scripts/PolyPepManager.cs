@@ -28,6 +28,7 @@ public class PolyPepManager : MonoBehaviour {
 
 	public float phiTarget = 0f;
 	public float psiTarget = 0f;
+    public float omegaTarget = 180.0f;
 	public float phiPsiDriveTorqueFromUI = 100.0f;
 
 	public bool showDrivenBondsOn = true;
@@ -492,6 +493,7 @@ public class PolyPepManager : MonoBehaviour {
 	{
 		float phi = phiTarget;
 		float psi = psiTarget;
+        float omega = omegaTarget;
 		//switch (UIDefinedSecondaryStructure)
 		switch (value)
 		{
@@ -499,47 +501,55 @@ public class PolyPepManager : MonoBehaviour {
 				// not defined
 				phi = phiTarget;
 				psi = psiTarget;
+                omega = omegaTarget;
 				break;
 
 			case 1:     
 				//alpha helix (right handed) (phi + ps ~ -105)
 				phi = -57.0f;
 				psi = -47.0f;
+                omega = 180.0f;
 				break;
 
 			case 2:     
 				//310 helix (phi + psi ~ -75)
 				phi = -49.0f;// -74.0f;
 				psi = -26.0f;// -4.0f;
+                omega = 180.0f;
 				break;
 
 			case 3:     
 				//anti beta sheet
 				phi = -139.0f;
 				psi = 135.0f;
+                omega = 180.0f;
 				break;
 
 			case 4:     
 				//parallel beta sheet
 				phi = -119.0f;
 				psi = 113.0f;
+                omega = 180.0f;
 				break;
 
 			case 5:     
 				//pi helix (phi + ps ~ -125)
 				phi = -55.0f;
 				psi = -70.0f;
+                omega = 180.0f;
 				break;
 
 			case 6:     
 				//alpha helix (left handed)
 				phi = 47.0f;
 				psi = 57.0f;
+                omega = 180.0f;
 				break;
 		}
 
 		phiTarget = phi;
 		psiTarget = psi;
+        omegaTarget = omega;
 		
 		phiSliderUI.value = phi;
 		psiSliderUI.value = psi;
@@ -565,7 +575,7 @@ public class PolyPepManager : MonoBehaviour {
 	{
 		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
 		{
-			_ppb.SetPhiPsiTargetValuesForSelection(phiTarget, psiTarget);
+			_ppb.SetPhiPsiTargetValuesForSelection(phiTarget, psiTarget, omegaTarget);
 		}
 	}
 
