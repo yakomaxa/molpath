@@ -3,12 +3,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-
 public class PolyPepManager : MonoBehaviour {
-
 
 	public GameObject polyPepBuilder_pf;
 	public List<PolyPepBuilder> allPolyPepBuilders = new List<PolyPepBuilder>();
+	public List<SideChainBuilder> allSideChainBuilders = new List<SideChainBuilder>();
 
 	public SideChainBuilder sideChainBuilder;
 	public ElectrostaticsManager electrostaticsManager;
@@ -28,7 +27,7 @@ public class PolyPepManager : MonoBehaviour {
 
 	public float phiTarget = 0f;
 	public float psiTarget = 0f;
-    public float omegaTarget = 180.0f;
+	public float omegaTarget = 180.0f;
 	public float phiPsiDriveTorqueFromUI = 100.0f;
 
 	public bool showDrivenBondsOn = true;
@@ -360,11 +359,46 @@ public class PolyPepManager : MonoBehaviour {
 
 		//Debug.Log("hello from the manager! ---> " + scaleVDWx10);
 		vdwScale = scaleVDWx10 / 10.0f;
-		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+//		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+//		{
+//			_ppb.ScaleVDW(vdwScale);
+                foreach ( PolyPepBuilder _ppb in allPolyPepBuilders)
 		{
-			_ppb.ScaleVDW(vdwScale);
-		}
+			Vector3 size = _ppb.transform.localScale;
+			size.x = size.x * vdwScale;
+			size.y = size.y * vdwScale;
+			size.z = size.z * vdwScale;
+			_ppb.transform.localScale = size;
+                         for (int ii = 1 ; ii < _ppb.numResidues*3 ; ii++)
+		         {
+//			  _ppb.UpdateBackboneTopologyConstraint(ii,vdwScale);
+			  _ppb.UpdateBackboneTopologyConstraint(ii,1.0f);
+								
+		         }
+
+                         for (int ii = 0 ; ii < _ppb.numResidues ; ii++){
+		             Residue residue = _ppb.chainArr[ii].GetComponent<Residue>();
+			     Vector3 ss = residue.myPlotCube.transform.lossyScale;
+		             //ss.x = ss.x * vdwScale;
+    		             ss.x = ss.x *0.01f ;
+     		             ss.y = ss.y / vdwScale ;
+      		             ss.z = ss.z / vdwScale ;
+      		             //ss.y = ss.y * vdwScale;
+      		             //ss.z = ss.z * vdwScale;
+		             residue.myPlotCube.transform.localScale = new Vector3(ss.x,ss.y,ss.z);
+			     residue.myPlotCubeLabel.transform.localScale = ss;
+			     _ppb.SetPhiPsiTargetValuesForResidue(ii, -45.0f, -60.0f, 180.0f);
+			     _ppb.chainArr[ii].GetComponent<Residue>().drivePhiPsiOn = true;
+//			     myPlotCubeLabel
+		         }
+                       _ppb.UpdatePhiPsiDrives();
+		    
+	         
 	}
+//	}
+}
+
+	
 
 	public void UpdateCollidersFromUI(bool value)
 	{
@@ -967,15 +1001,16 @@ public class PolyPepManager : MonoBehaviour {
 		UpdatePanel03Pos();
 		UpdatePanelInfoPos();
 		UpdatePanelControlsPos();
-		UpdateKeepGameObjectAccessible(UI, 0.4f, 5.0f);
+		//pUpdateKeepGameObjectAccessible(UI, 0.4f, 5.0f);
 		//UpdateKeepGameObjectCloseToPlayer(UI, 6.0f);
-		UpdateKeepGameObjectAccessible(mySnapshotCamera, 0.2f, 5.0f);
+		//UpdateKeepGameObjectAccessible(mySnapshotCamera, 0.2f, 5.0f);
 		//UpdateKeepGameObjectCloseToPlayer(mySnapshotCamera, 10.0f);
 	        if (Input.GetKey(KeyCode.P))
 		{
 		       DumpXYZ2();
-		}
-
+		       }
+		
+		
 		if (Input.GetKey(KeyCode.Escape))
 		{
 			AppQuit();

@@ -26,11 +26,11 @@ public class Residue : MonoBehaviour {
 
 	public float phiTarget;
 	public float psiTarget;
-    public float omegaTarget;
+	public float omegaTarget;
 
 	public float phiCurrent;
 	public float psiCurrent;
-    public float omegaCurrent;
+	public float omegaCurrent;
 
 	public GameObject ramaPlotOrigin;
 	public float ramaPlotScale = 0.0012f; //  set visually against UI
@@ -156,7 +156,7 @@ public class Residue : MonoBehaviour {
 		//Debug.Log(phiTarget + " " + phiCurrent);
 
 		psiCurrent = - Vector3.SignedAngle(calpha_pf.transform.up, carbonyl_pf.transform.up, calpha_pf.transform.right);
-        //omegaCurrent = - Vector3.SignedAngle(calpha_pf.transform.up, carbonyl_pf.transform.up, calpha_pf.transform.right);
+//		omegaCurrent = - Vector3.SignedAngle(carbonyl_pf.transform.up, amide_pf.transform.up, calpha_pf.transform.right);
 
 		//Debug.Log(psiTarget + " " + psiCurrent);
 	}

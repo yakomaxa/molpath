@@ -388,7 +388,7 @@ public class PolyPepBuilder : MonoBehaviour {
 		// physics collider should be constant radius and independent of rendering scale
 		// BUT in transform hierarchy the SphereCollider inherits the transform.localscale
 		// SO apply inverse scaling to SphereCollider to compensate
-		myAtom.GetComponent<SphereCollider>().radius = 1.1f * relativeRadiusAtomType / scaleVDW; 
+		//myAtom.GetComponent<SphereCollider>().radius = 1.1f * relativeRadiusAtomType / scaleVDW; 
 		// 1.1f is magic number
 
 	}
@@ -646,6 +646,43 @@ public void SetAllColliderIsTrigger(bool value)
 		}
 		cj.angularYMotion = ConfigurableJointMotion.Locked;
 		cj.angularZMotion = ConfigurableJointMotion.Locked;
+	}
+
+
+	public void UpdateBackboneTopologyConstraint(int index, float scale)
+	{
+
+		// 
+		// adds a configurable joint between backbone prefabs
+		//
+
+		Assert.IsTrue((index > 0), "Assertion failed");
+
+		GameObject go1 = polyArr[index - 1];
+		GameObject go2 = polyArr[index];
+
+
+		float bondLengthPeptide = 1.33f *scale;
+		float bondLengthAmideCalpha = 1.46f *scale;
+		float bondLengthCalphaCarbonyl = 1.51f *scale;
+
+                ConfigurableJoint cj = go1.GetComponent(typeof(ConfigurableJoint)) as ConfigurableJoint;
+		//cj = go1.GetComponent<ConfigurableJoint>();
+		cj.connectedBody = go2.GetComponent<Rigidbody>();
+		if (go1.tag == "amide")
+		{
+			cj.anchor = new Vector3(bondLengthAmideCalpha, 0f, 0f);
+		}
+		else if (go1.tag == "calpha")
+		{
+			cj.anchor = new Vector3(bondLengthCalphaCarbonyl, 0f, 0f);
+		}
+		else if (go1.tag == "carbonyl")
+		{
+			cj.anchor = new Vector3(bondLengthPeptide, 0f, 0f);
+		}
+//		cj.autoConfigureConnectedAnchor = false;
+//		cj.connectedAnchor = new Vector3(0f, 0f, 0f);
 	}
 
 	void AddDistanceConstraint(GameObject sourceGO, GameObject targetGO, float distance, int springStrength)
@@ -1233,7 +1270,7 @@ public void SetAllColliderIsTrigger(bool value)
 		UpdatePhiPsiDrives();
 	}
 
-	void SetPhiPsiTargetValuesForResidue(int resid, float phi, float psi, float omega)
+	public void SetPhiPsiTargetValuesForResidue(int resid, float phi, float psi, float omega)
 	{
 		Residue residue = chainArr[resid].GetComponent<Residue>();
 

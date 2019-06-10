@@ -122,7 +122,8 @@ public class SideChainBuilder : MonoBehaviour {
 
 		if (type == "XXX")
 		{
-			residue_cs.EnableProxySideChain();
+//			residue_cs.EnableProxySideChain();
+			residue_cs.DisableProxySideChain();
 		}
 		else
 		{
