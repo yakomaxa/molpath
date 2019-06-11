@@ -1,5 +1,8 @@
 This is test branch to explore Peppy codes on Mac modified by sakuma. Function may be broken.
 
+2019/06/10
+* I'm probably understanding how to scale models.
+
 2019/06/09
 
 * Extend (phi psi) to (phi psi omega), not well-checked.
