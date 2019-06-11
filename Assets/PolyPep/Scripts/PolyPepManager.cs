@@ -945,7 +945,7 @@ public class PolyPepManager : MonoBehaviour {
 		 for ( int resid = 1; resid < nres; resid++)
 		  {
                    GameObject amide = _ppb.GetAmideForResidue(resid);
-                   Vector3 x10am = amide.transform.position * 10.0f;
+                   Vector3 x10am = amide.transform.position * 10.0f ;
                    System.IO.File.AppendAllText("Assets/Resources/out.txt", x10am.ToString());
 
 		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
@@ -966,23 +966,25 @@ public class PolyPepManager : MonoBehaviour {
                foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
                {
                  int nres = _ppb.numResidues;
+		 float scale = GameObject.Find("Slider_Vdw").GetComponent<Slider>().value / 10.0f;		
+//		 vdwSliderUI = temp.GetComponent<Slider>();
 		 for ( int resid = 1; resid < nres; resid++)
 		  {
                    GameObject amide = _ppb.GetAmideForResidue(resid);
-                   Vector3 x10am = amide.transform.position * 10.0f;
+                   Vector3 x10am = amide.transform.position * 10.0f / scale;
                    System.IO.File.AppendAllText("Assets/Resources/out.txt", x10am.ToString());
 
 		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
                    Debug.Log("print position" + calpha.transform.position);
-                   Vector3 x10ca = calpha.transform.position * 10.0f;
+                   Vector3 x10ca = calpha.transform.position * 10.0f / scale;
                    System.IO.File.AppendAllText("Assets/Resources/out.txt", x10ca.ToString());
 
 		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
                    Debug.Log("print position" + carbonyl.transform.position);
-                   Vector3 x10car = carbonyl.transform.position * 10.0f;
+                   Vector3 x10car = carbonyl.transform.position * 10.0f / scale;
                    System.IO.File.AppendAllText("Assets/Resources/out.txt", x10car.ToString());
 
-                   Vector3 x10posCO = carbonyl.transform.Find("tf_O/O_carbonyl").position*10.0f;
+                   Vector3 x10posCO = carbonyl.transform.Find("tf_O/O_carbonyl").position * 10.0f / scale;
 		   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10posCO.ToString());
 		   }
 

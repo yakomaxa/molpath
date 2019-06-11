@@ -1,4 +1,5 @@
 TODO after dirty-rescaling: 2019/06/11
+(-1) Consider Collider?? Helix shrinks when positvely scaled.
 (0) Do similar work on joint responsible for Hydrogen-bonds.They are not scaled now.
 (1) Scaling sidechains. Now proxy sidechain is disabled so that it's a backbone-only model.
 (2) Re-re-scaling boxes on ramachandran plane. They do explode or get tiny when ppd is scaled !!
