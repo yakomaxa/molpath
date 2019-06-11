@@ -359,15 +359,18 @@ public class PolyPepManager : MonoBehaviour {
 
 		//Debug.Log("hello from the manager! ---> " + scaleVDWx10);
 		vdwScale = scaleVDWx10 / 10.0f;
+//		float vdwScale
 //		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
 //		{
 //			_ppb.ScaleVDW(vdwScale);
+//              }
+
                 foreach ( PolyPepBuilder _ppb in allPolyPepBuilders)
 		{
-			Vector3 size = _ppb.transform.localScale;
-			size.x = size.x * vdwScale;
-			size.y = size.y * vdwScale;
-			size.z = size.z * vdwScale;
+			Vector3 size = new Vector3(0f,0f,0f);
+			size.x = vdwScale;
+			size.y = vdwScale;
+			size.z = vdwScale;
 			_ppb.transform.localScale = size;
                          for (int ii = 1 ; ii < _ppb.numResidues*3 ; ii++)
 		         {
@@ -387,11 +390,11 @@ public class PolyPepManager : MonoBehaviour {
       		             //ss.z = ss.z * vdwScale;
 		             residue.myPlotCube.transform.localScale = new Vector3(ss.x,ss.y,ss.z);
 			     residue.myPlotCubeLabel.transform.localScale = ss;
-			     _ppb.SetPhiPsiTargetValuesForResidue(ii, -45.0f, -60.0f, 180.0f);
-			     _ppb.chainArr[ii].GetComponent<Residue>().drivePhiPsiOn = true;
+			     //_ppb.SetPhiPsiTargetValuesForResidue(ii, -45.0f, -60.0f, 180.0f);
+			     //_ppb.chainArr[ii].GetComponent<Residue>().drivePhiPsiOn = true;
 //			     myPlotCubeLabel
 		         }
-                       _ppb.UpdatePhiPsiDrives();
+//                       _ppb.UpdatePhiPsiDrives();
 		    
 	         
 	}
