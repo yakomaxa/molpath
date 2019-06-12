@@ -1,3 +1,8 @@
+TODO after addition of ATOM line reader : 2019/06/12
+(0) Do consider how to store coodinates.
+(1) Do consider how to place (instantinate or transfer) Objects (amide, calpha, carbonyl) to coordinates. Rotation
+(2) Torsion data should be consistently imported
+
 TODO after dirty-rescaling: 2019/06/11
 (-1) Consider Collider?? Helix shrinks when positvely scaled.
 (0) Do similar work on joint responsible for Hydrogen-bonds.They are not scaled now.

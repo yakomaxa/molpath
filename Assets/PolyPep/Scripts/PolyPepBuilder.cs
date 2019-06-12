@@ -13,7 +13,11 @@ public class PeptideData
 	public string residPD;
 	public float phiPD;
 	public float psiPD;
-    public float omegaPD;
+	public float omegaPD;
+	public float x;
+	public float y;
+	public float z;
+	
 }
 
 public class PolyPepBuilder : MonoBehaviour {
@@ -101,6 +105,7 @@ public class PolyPepBuilder : MonoBehaviour {
 		// read peptide data from file
 		bool readExternalPeptideData = true; 
 		string filename = "Assets/PolyPep/Data/1350_phi_psi_omega.txt";
+		//string filename = "Assets/PolyPep/Data/1350.pdb";
 
 		if (readExternalPeptideData)
 		{
@@ -1435,6 +1440,7 @@ public void SetAllColliderIsTrigger(bool value)
 						Debug.Log(line);
 						//ParsePhiPsi(line);
 						ParsePhiPsiOmega(line);
+						//ParseATOMline(line);
 						string[] entries = line.Split(',');
 						if (entries.Length > 0)
 						{
@@ -1510,10 +1516,7 @@ public void SetAllColliderIsTrigger(bool value)
 
 	private void ParsePhiPsiOmega(string line)
 	{
-		//
-		// parses output from PYMOL command: phi_psi all
-		//
-		// " PHE-4:    (  -70.8,  -44.7 )"
+                // format
 		// "    2 A L G     0.00   91.60  179.79"
 
                 string commentchar = line.Substring(0, 1);		
@@ -1561,6 +1564,88 @@ public void SetAllColliderIsTrigger(bool value)
 			 numResidues = myResid;
 		}
 	}
+
+	private void ParseATOMline(string line)
+	{
+		//
+		// parses ATOM line from "beautiful" PDB file, which do not have any alternate coordinate or insertion codes or so.
+		// PDB format is getting out of date...
+		// format
+		// ATOM      1  N   ASN A   1     -11.884  -4.563   1.671  1.00  0.00           N
+		// ATOM      2  CA  ASN A   1     -11.548  -3.240   1.083  1.00  0.00           C
+		// ATOM      3  C   ASN A   1     -12.808  -2.482   0.678  1.00  0.00           C
+		// ATOM      4  O   ASN A   1     -13.341  -2.682  -0.414  1.00  0.00           O
+		// ATOM      5  CB  ASN A   1     -10.649  -3.461  -0.136  1.00  0.00           C
+		// ATOM = substring(0,6)
+		
+		// FROM : https://www.wwpdb.org/documentation/file-format-content/format33/sect9.html		
+		// Record Format
+		// COLUMNS        DATA  TYPE    FIELD        DEFINITION
+		// -------------------------------------------------------------------------------------
+		//  1 -  6        Record name   "ATOM  "
+		//  7 - 11        Integer       serial       Atom  serial number.
+		// 13 - 16        Atom          name         Atom name.
+		// 17             Character     altLoc       Alternate location indicator.
+		// 18 - 20        Residue name  resName      Residue name.
+		// 22             Character     chainID      Chain identifier.
+		// 23 - 26        Integer       resSeq       Residue sequence number.
+		// 27             AChar         iCode        Code for insertion of residues.
+		// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+		// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+		// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+		// 55 - 60        Real(6.2)     occupancy    Occupancy.
+		// 61 - 66        Real(6.2)     tempFactor   Temperature  factor.
+		// 77 - 78        LString(2)    element      Element symbol, right-justified.
+		// 79 - 80        LString(2)    charge       Charge  on the atom.
+		
+		string commentchar = line.Substring(0, 4);		
+		if(commentchar!="ATOM"){
+		         Debug.Log("Non-ATOM line skipped");
+		}
+		else
+		{       // note column name start from 0, so N - 1 is head of column
+		        string atom      = line.Substring(0, 6);
+			int    serial    = int.Parse(line.Substring(6, 5));
+			string name      = line.Substring(12, 4);
+			string altLoc    = line.Substring(16, 1);
+			string resName   = line.Substring(17, 3); 
+			string chainID   = line.Substring(21, 1);
+			int    resSeq    = int.Parse(line.Substring(22, 4));
+			string iCode     = line.Substring(26, 1);
+			float  xCoord    = float.Parse(line.Substring(30, 8));
+			float  yCoord    = float.Parse(line.Substring(38, 8));
+			float  zCoord    = float.Parse(line.Substring(46, 8));
+			float  occupancy = float.Parse(line.Substring(54, 6));
+			float  tempFactor= float.Parse(line.Substring(60, 6));
+			string element   = line.Substring(76, 2);
+			string charge    = line.Substring(78, 2);
+			
+			{  // DO SOMETHING HERE TO STORE DATA SOMEWHERE.
+			   // Natural objects in Peppy are Amide, Calpha, Carbonyl units
+			   //PeptideData _peptideData = new PeptideData();
+			   //_peptideData.residPD = resName;
+			   //_peptideData.x = xCoord;
+			   //_peptideData.y = yCoord;
+   			   //_peptideData.z = zCoord;
+			   //_peptideData.omegaPD = myOmega;
+			   //myPeptideDataList.Add(_peptideData);
+   			   Debug.Log("  atom = " + atom);
+		      	   Debug.Log("  serial = " + serial);
+   		      	   Debug.Log("  name = " + name);
+      		      	   Debug.Log("  altLoc = " + altLoc);
+       		      	   Debug.Log("  resName = " + resName);
+       		      	   Debug.Log("  chainID = " + chainID);
+       		      	   Debug.Log("  resSeq = " + resSeq);
+       		      	   Debug.Log("  iCode = " + iCode);
+       		      	   Debug.Log("  xCoord = " + xCoord);
+       		      	   Debug.Log("  yCoord = " + yCoord);
+       		      	   Debug.Log("  zCoord = " + zCoord);			   			   			   
+			 }
+			 //SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
+			 //numResidues = myResid;
+		}
+	}
+
 
 
 	public void UpdateResidueSelectionStartFromUI()
