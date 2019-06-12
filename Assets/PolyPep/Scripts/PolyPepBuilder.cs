@@ -100,7 +100,7 @@ public class PolyPepBuilder : MonoBehaviour {
 	{
 		// read peptide data from file
 		bool readExternalPeptideData = true; 
-		string filename = "Assets/PolyPep/Data/1350_phi_psi.txt";
+		string filename = "Assets/PolyPep/Data/1350_phi_psi_omega.txt";
 
 		if (readExternalPeptideData)
 		{
@@ -180,7 +180,7 @@ public class PolyPepBuilder : MonoBehaviour {
 			//
 			chainPhiJointDrives = new JointDrive[numResidues];
 			chainPsiJointDrives = new JointDrive[numResidues];
-            chainOmegaJointDrives = new JointDrive[numResidues];
+			chainOmegaJointDrives = new JointDrive[numResidues];
 
 			for (int i = 0; i < numResidues; i++)
 			{
@@ -232,7 +232,7 @@ public class PolyPepBuilder : MonoBehaviour {
 			{
 				case 0:
 					AddResidueToChain(i / 3);
-					polyArr[i] = Instantiate(amidePf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 0, 0), chainArr[i/3].transform);
+					polyArr[i] = Instantiate(amidePf,(lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 0, 0),chainArr[i/3].transform);
 					break;
 				case 1:
 					// Yrot = +69
@@ -1433,7 +1433,8 @@ public void SetAllColliderIsTrigger(bool value)
 						// In this example, I split it into arguments based on comma
 						// deliniators, then send that array to DoStuff()
 						Debug.Log(line);
-						ParsePhiPsi(line);
+						//ParsePhiPsi(line);
+						ParsePhiPsiOmega(line);
 						string[] entries = line.Split(',');
 						if (entries.Length > 0)
 						{
@@ -1505,6 +1506,62 @@ public void SetAllColliderIsTrigger(bool value)
 		//SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
 		numResidues = myResid;
 	}
+
+
+	private void ParsePhiPsiOmega(string line)
+	{
+		//
+		// parses output from PYMOL command: phi_psi all
+		//
+		// " PHE-4:    (  -70.8,  -44.7 )"
+		// "    2 A L G     0.00   91.60  179.79"
+
+                string commentchar = line.Substring(0, 1);		
+		if(commentchar=="#"){
+		         Debug.Log("comment line");
+		}
+		else
+		{
+			int myResid = int.Parse(line.Substring(0, 5));		
+			string resName1 = line.Substring(6, 1); // later write function to A -> ALA and so on.
+			string sstype = line.Substring(8, 1);
+			string abego = line.Substring(10, 1);	
+			float myPhi = float.Parse(line.Substring(13, 7));
+			float myPsi = float.Parse(line.Substring(21, 7));
+			float myOmega = float.Parse(line.Substring(29, 7));			
+//		float myOmega = 180.0f ;
+        	        string resName = "XXX";
+
+			if (myResid == 0)
+			{
+			// add default data for resid 1
+			   PeptideData _peptideData = new PeptideData();
+      			   _peptideData.residPD = "XXX";
+			   _peptideData.phiPD = 0f;
+			   _peptideData.psiPD = 0f;
+			   _peptideData.omegaPD = 0f;
+			   myPeptideDataList.Add(_peptideData);
+			}
+
+			Debug.Log("  resname = " + resName);
+			Debug.Log("  resid = " + myResid);
+			Debug.Log("  phi = " + myPhi);
+			Debug.Log("  psi = " + myPsi);
+			
+			{
+			// add data for current resid
+			   PeptideData _peptideData = new PeptideData();
+			   _peptideData.residPD = resName;
+			   _peptideData.phiPD = myPhi;
+			   _peptideData.psiPD = myPsi;
+			   _peptideData.omegaPD = myOmega;
+			   myPeptideDataList.Add(_peptideData);
+			 }
+			 //SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
+			 numResidues = myResid;
+		}
+	}
+
 
 	public void UpdateResidueSelectionStartFromUI()
 	{

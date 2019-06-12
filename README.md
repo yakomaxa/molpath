@@ -1,5 +1,8 @@
 This is test branch to explore Peppy codes on Mac modified by sakuma. Function may be broken.
 
+2019/06/11
+Comments will be in TODO.txt
+
 2019/06/10
 * I'm probably understanding how to scale models.
 

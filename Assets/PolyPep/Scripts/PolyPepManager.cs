@@ -359,7 +359,7 @@ public class PolyPepManager : MonoBehaviour {
 
 		//Debug.Log("hello from the manager! ---> " + scaleVDWx10);
 		vdwScale = scaleVDWx10 / 10.0f;
-//		float vdwScale
+//		vdwScale = 1.0f; fixing scale
 //		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
 //		{
 //			_ppb.ScaleVDW(vdwScale);
