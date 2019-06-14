@@ -16,8 +16,7 @@ public class PeptideData
 	public float omegaPD;
 	public float x;
 	public float y;
-	public float z;
-	
+	public float z;	
 }
 
 public class PolyPepBuilder : MonoBehaviour {
@@ -66,7 +65,7 @@ public class PolyPepBuilder : MonoBehaviour {
 
 	public JointDrive[] chainPhiJointDrives;
 	private JointDrive[] chainPsiJointDrives;
-    private JointDrive[] chainOmegaJointDrives;
+	private JointDrive[] chainOmegaJointDrives;
 
 	public float hbondStrength = 0f; // updated by PolyPepManager
 
@@ -86,8 +85,7 @@ public class PolyPepBuilder : MonoBehaviour {
 
 
 	private bool disablePhiPsiUIInput = false;
-
-    private bool LockOmega = false;
+	private bool LockOmega = false;
 
 	Shader shaderStandard;
 	Shader shaderToonOutline;
@@ -105,12 +103,14 @@ public class PolyPepBuilder : MonoBehaviour {
 		// read peptide data from file
 		bool readExternalPeptideData = true; 
 		string filename = "Assets/PolyPep/Data/1350_phi_psi_omega.txt";
+		string filename_pdb = "Assets/PolyPep/Data/1350.pdb";
 		//string filename = "Assets/PolyPep/Data/1350.pdb";
 
 		if (readExternalPeptideData)
 		{
 			// reads data into and overwrites numResidues
 			Debug.Log("LOAD FILE = " + LoadPhiPsiData(filename));
+			Debug.Log("LOAD FILE = " + LoadXYZData(filename_pdb));
 			//foreach ( PeptideData _peptideData in peptideDataRead)
 			//{
 			//	Debug.Log(_peptideData.residPD + " " + _peptideData.phiPD + " " + _peptideData.psiPD);
@@ -154,12 +154,24 @@ public class PolyPepBuilder : MonoBehaviour {
 			// push sequence and phi psi data to peptide
 			for (int i = 0; i < myPeptideDataList.Count; i++)
 			{
-				PeptideData _pd = myPeptideDataList[i];
+			        PeptideData _pd = myPeptideDataList[i];
 				//Debug.Log(i + " " + _pd.residPD + " " + _pd.phiPD + " " + _pd.psiPD);
 				sideChainBuilder.BuildSideChain(gameObject, i, _pd.residPD);
 				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD, _pd.omegaPD);
 				chainArr[i].GetComponent<Residue>().drivePhiPsiOn = true;
 			}
+
+//			for (int i = 0; i < myPeptideDataList.Count; i++)
+//			{
+//				PeptideData _pd = myPeptideDataList[i];
+//				//Debug.Log(i + " " + _pd.residPD + " " + _pd.phiPD + " " + _pd.psiPD);
+//				sideChainBuilder.BuildSideChain(gameObject, i, _pd.residPD);
+//				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD, _pd.omegaPD);
+//				chainArr[i].GetComponent<Residue>().drivePhiPsiOn = true;
+//g			}
+
+
+
 			UpdatePhiPsiDrives();
 		}
 
@@ -196,10 +208,10 @@ public class PolyPepBuilder : MonoBehaviour {
 				chainPsiJointDrives[i].maximumForce = 0.0f;
 				chainPsiJointDrives[i].positionDamper = 0;
 				chainPsiJointDrives[i].positionSpring = 0.0f;
-
-                chainOmegaJointDrives[i].maximumForce = 0.0f;
-                chainOmegaJointDrives[i].positionDamper = 0;
-                chainOmegaJointDrives[i].positionSpring = 0.0f;
+				
+				chainOmegaJointDrives[i].maximumForce = 0.0f;
+				chainOmegaJointDrives[i].positionDamper = 0;
+				chainOmegaJointDrives[i].positionSpring = 0.0f;
 
 			}
 		}
@@ -269,7 +281,8 @@ public class PolyPepBuilder : MonoBehaviour {
 			if (i > 0)
 			{
 				AddBackboneTopologyConstraint(i);
-			}
+			}			
+			
 
 			{
 				// turn off shadows / renderer
@@ -291,7 +304,6 @@ public class PolyPepBuilder : MonoBehaviour {
 			
 			// BackboneUnit script handles setup of UI parameters (collisions / vdw scale etc.)
 		}
-
 		//SetAllColliderIsTrigger (true);
 
 		//for (int i = 0; i < polyLength; i++)
@@ -304,6 +316,67 @@ public class PolyPepBuilder : MonoBehaviour {
 		//		rb.angularDrag = 5;
 		//	}
 		//}
+
+
+  		PeptideData _pdd = myPeptideDataList[0];
+		polyArr[0].transform.position = new Vector3(_pdd.x,
+		                                               _pdd.y,
+							       _pdd.z);
+
+                                
+		for (int i = 1; i < polyLength; i++){
+       			if (i > 0)
+			{
+				lastUnitTransform = polyArr[i - 1].transform;
+				
+			}else{
+			continue;
+			}
+			
+			int id = i % 6;
+			if (true){
+			   float bondlength = 0.0f;
+   			   float angle = 0.0f;
+			   float dihd = 0.0f;
+//			   float bondLengthPeptide = 1.33f;
+//			   float bondLengthAmideCalpha = 1.46f;
+//			   float bondLengthCalphaCarbonyl = 1.51f;
+
+//                            polyArr[i].transform.position = lastUnitTransform.position;
+//			    polyArr[i].transform.rotation = Quaternion.identity;
+			   			      
+				if (id == 0 || id == 3){
+//				     angle = 58;
+				     angle = 10;
+     				     dihd =  90;
+  //   	     			     polyArr[i].transform.Rotate(lastUnitTransform.right, 180);
+				     bondlength = 0.133f;				     
+				     }
+				     
+				if (id == 1 || id == 4){
+				     angle = -69;
+  //   				     angle = 10;
+     				     dihd =  90;
+     				     bondlength = 0.146f;
+				    }
+				    
+				if (id == 2 || id == 5){
+				     angle = 64;
+//     				     angle = 10;
+				     dihd =  90;
+//	     			     polyArr[i].transform.Rotate(lastUnitTransform.right, 180);
+				     bondlength = 0.151f;
+				     }
+//			    polyArr[i].transform.Rotate(polyArr[i].transform.up, angle);
+//			    polyArr[i].transform.Rotate(polyArr[i].transform.right, dihd);
+// 			   polyArr[i].transform.position = (lastUnitTransform.position + lastUnitTransform.right * bondlength );
+       		           PeptideData _pd = myPeptideDataList[i];
+			   polyArr[i].transform.position = new Vector3(_pd.x,
+			                                               _pd.y,
+								       _pd.z);
+			    }
+			   }
+
 
 
 		// assign references in chainArr
@@ -1410,6 +1483,43 @@ public void SetAllColliderIsTrigger(bool value)
 	}
 
 
+	private bool LoadXYZData(string fileName)
+	{
+		try
+		{
+			string line;
+			StreamReader theReader = new StreamReader(fileName, Encoding.Default);
+			using (theReader)
+			{
+				do
+				{
+					line = theReader.ReadLine();
+
+					if (line != null)
+					{
+						ParseATOMline(line);
+						string[] entries = line.Split(',');
+						if (entries.Length > 0)
+						{
+
+							//DoStuff(entries);
+						}
+
+					}
+				}
+				while (line != null);
+				theReader.Close();
+				return true;
+			}
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine("{0}\n", e.Message);
+			return false;
+		}
+
+	}
+	
 	private bool LoadPhiPsiData(string fileName)
 	{
 		// https://answers.unity.com/questions/279750/loading-data-from-a-txt-file-c.html
@@ -1480,7 +1590,7 @@ public void SetAllColliderIsTrigger(bool value)
 		int myResid = int.Parse(residSplit[0]);
 		float myPhi = float.Parse(line.Substring(12, 7));
 		float myPsi = float.Parse(line.Substring(20, 7));
-        float myOmega = 180.0f ;
+		float myOmega = 180.0f ;
 
 		if (myResid == 2)
 		{
@@ -1489,7 +1599,7 @@ public void SetAllColliderIsTrigger(bool value)
 			_peptideData.residPD = "XXX";
 			_peptideData.phiPD = 0f;
 			_peptideData.psiPD = 0f;
-            _peptideData.omegaPD = 0f;
+			_peptideData.omegaPD = 0f;
 			myPeptideDataList.Add(_peptideData);
 		}
 
@@ -1623,23 +1733,28 @@ public void SetAllColliderIsTrigger(bool value)
 			{  // DO SOMETHING HERE TO STORE DATA SOMEWHERE.
 			   // Natural objects in Peppy are Amide, Calpha, Carbonyl units
 			   //PeptideData _peptideData = new PeptideData();
+   			   PeptideData _peptideData = new PeptideData();
 			   //_peptideData.residPD = resName;
-			   //_peptideData.x = xCoord;
-			   //_peptideData.y = yCoord;
-   			   //_peptideData.z = zCoord;
+			  if (name.Replace(" ", "")=="CA" || name.Replace(" ", "")=="N" || name.Replace(" ","")=="C"){
+			   _peptideData.x = xCoord * 0.1f ;
+			   _peptideData.y = yCoord * 0.1f ;
+   			   _peptideData.z = -zCoord * 0.1f; // chirality....
+   			   myPeptideDataList.Add(_peptideData);
+      			   Debug.Log("APPENDING DATA"+ name + "," + xCoord + "," + yCoord + "," + zCoord);
+			   }
 			   //_peptideData.omegaPD = myOmega;
 			   //myPeptideDataList.Add(_peptideData);
-   			   Debug.Log("  atom = " + atom);
-		      	   Debug.Log("  serial = " + serial);
-   		      	   Debug.Log("  name = " + name);
-      		      	   Debug.Log("  altLoc = " + altLoc);
-       		      	   Debug.Log("  resName = " + resName);
-       		      	   Debug.Log("  chainID = " + chainID);
-       		      	   Debug.Log("  resSeq = " + resSeq);
-       		      	   Debug.Log("  iCode = " + iCode);
-       		      	   Debug.Log("  xCoord = " + xCoord);
-       		      	   Debug.Log("  yCoord = " + yCoord);
-       		      	   Debug.Log("  zCoord = " + zCoord);			   			   			   
+//   			   Debug.Log("  atom = " + atom);
+//		      	   Debug.Log("  serial = " + serial);
+//   		      	   Debug.Log("  name = " + name);
+//     		      	   Debug.Log("  altLoc = " + altLoc);
+//     		      	   Debug.Log("  resName = " + resName);
+//     		      	   Debug.Log("  chainID = " + chainID);
+//     		      	   Debug.Log("  resSeq = " + resSeq);
+//     		      	   Debug.Log("  iCode = " + iCode);
+//     		      	   Debug.Log("  xCoord = " + xCoord);
+//     		      	   Debug.Log("  yCoord = " + yCoord);
+//     		      	   Debug.Log("  zCoord = " + zCoord);			   			   			   
 			 }
 			 //SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
 			 //numResidues = myResid;
