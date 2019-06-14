@@ -1010,7 +1010,7 @@ public class PolyPepManager : MonoBehaviour {
 //		   string s = System.String.Format("ATOM  {0, 5}{1, 4}ALA  {2, 1}{3, 4} {0, 8:F3}{0, 8:F3}{0, 8:F3}",count,"N","A",resid,x10am.x,x10am.y,x10am.z);
                    System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
 		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
-		   "ATOM",count," "," ","N","ALA"," ","A",resid," ",x10am.x,x10am.y,x10am.z));
+		   "ATOM",count," "," ","N","ALA"," ","A",resid," ",x10am.x,x10am.y,-x10am.z));
 
 		   count=count+1;
 		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
@@ -1018,7 +1018,7 @@ public class PolyPepManager : MonoBehaviour {
                    Vector3 x10ca = calpha.transform.position * 10.0f / scale;
 		   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
    		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
-   		   "ATOM",count," "," ","CA","ALA"," ","A",resid," ",x10ca.x,x10ca.y,x10ca.z));
+   		   "ATOM",count," "," ","CA","ALA"," ","A",resid," ",x10ca.x,x10ca.y,-x10ca.z));
 
 		   count=count+1;
 		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
@@ -1026,14 +1026,14 @@ public class PolyPepManager : MonoBehaviour {
                    Vector3 x10car = carbonyl.transform.position * 10.0f / scale;
    		   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
      		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
-		   "ATOM",count," "," ","C","ALA"," ","A",resid," ",x10car.x,x10car.y,x10car.z));
+		   "ATOM",count," "," ","C","ALA"," ","A",resid," ",x10car.x,x10car.y,-x10car.z));
 
 //                   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb", x10car.ToString());
 		   count=count+1;
                    Vector3 x10posCO = carbonyl.transform.Find("tf_O/O_carbonyl").position * 10.0f / scale;
    		   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
       		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
-   		   "ATOM",count," "," ","O","ALA"," ","A",resid," ",x10posCO.x,x10posCO.y,x10posCO.z));
+   		   "ATOM",count," "," ","O","ALA"," ","A",resid," ",x10posCO.x,x10posCO.y,-x10posCO.z));
 
 
 		   }
