@@ -244,33 +244,81 @@ public class PolyPepBuilder : MonoBehaviour {
 			// prefab backbone bonds are aligned to Z axis / buildTransform.right , Y rotations of prefabs create correct backbone bond angles
 			//
 			// prefabs for 2,3 and 4 positions are flipped 180 X to make alternating extended chain
+			
+			/// Original style of code, Prefabs are rotated according to absolute Y axis.
+			///
+			if (false)
+			{
+				switch (id)
+				{
+					case 0:
+						AddResidueToChain(i / 3);
+						polyArr[i] = Instantiate(amidePf, (lastUnitTransform.position + offsetPositionUnit),
+							transform.rotation * Quaternion.Euler(0, 0, 0), chainArr[i / 3].transform);
+						break;
+					case 1:
+						// Yrot = +69
+						polyArr[i] = Instantiate(calphaPf, (lastUnitTransform.position + offsetPositionUnit),
+							transform.rotation * Quaternion.Euler(0, 69, 0), chainArr[i / 3].transform);
+						break;
+					case 2:
+						// Yrot = +69 -64 = 5
+						polyArr[i] = Instantiate(carbonylPf, (lastUnitTransform.position + offsetPositionUnit),
+							transform.rotation * Quaternion.Euler(180, 5, 0), chainArr[i / 3].transform);
+						break;
+					case 3:
+						AddResidueToChain(i / 3);
+						// Yrot = +69 -64 +58 = 63
+						polyArr[i] = Instantiate(amidePf, (lastUnitTransform.position + offsetPositionUnit),
+							transform.rotation * Quaternion.Euler(180, 63, 0), chainArr[i / 3].transform);
+						break;
+					case 4:
+						// Yrot = +69 -64 +58 -69 = -6
+						polyArr[i] = Instantiate(calphaPf, (lastUnitTransform.position + offsetPositionUnit),
+							transform.rotation * Quaternion.Euler(180, -6, 0), chainArr[i / 3].transform);
+						break;
+					case 5:
+						// Yrot = +69 -64 +58 -69 +64 = 58
+						polyArr[i] = Instantiate(carbonylPf, (lastUnitTransform.position + offsetPositionUnit),
+							transform.rotation * Quaternion.Euler(0, 58, 0), chainArr[i / 3].transform);
+						break;
 
+				}
+			}
+
+			// New style... new Prefab is rotated relatively to lastUnitTransform
 			switch (id)
 			{
 				case 0:
 					AddResidueToChain(i / 3);
-					polyArr[i] = Instantiate(amidePf,(lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 0, 0),chainArr[i/3].transform);
+					polyArr[i] = Instantiate(amidePf,(lastUnitTransform.position + offsetPositionUnit), 
+						lastUnitTransform.localRotation * Quaternion.Euler(0, -58, 0),chainArr[i/3].transform);
 					break;
 				case 1:
 					// Yrot = +69
-					polyArr[i] = Instantiate(calphaPf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 69, 0), chainArr[i / 3].transform);
+					polyArr[i] = Instantiate(calphaPf, (lastUnitTransform.position + offsetPositionUnit), 
+						lastUnitTransform.localRotation * Quaternion.Euler(0, 69, 0), chainArr[i/3].transform);
 					break;
 				case 2:
 					// Yrot = +69 -64 = 5
-					polyArr[i] = Instantiate(carbonylPf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(180, 5, 0), chainArr[i / 3].transform);
+					polyArr[i] = Instantiate(carbonylPf, (lastUnitTransform.position + offsetPositionUnit),
+						 lastUnitTransform.localRotation * Quaternion.Euler(180, -64, 0),chainArr[i/3].transform);
 					break;
 				case 3:
 					AddResidueToChain(i / 3);
 					// Yrot = +69 -64 +58 = 63
-					polyArr[i] = Instantiate(amidePf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(180, 63, 0), chainArr[i / 3].transform);	
+					polyArr[i] = Instantiate(amidePf, (lastUnitTransform.position + offsetPositionUnit), 
+						lastUnitTransform.localRotation * Quaternion.Euler(0, -58, 0), chainArr[i/3].transform);	
 					break;
 				case 4:
 					// Yrot = +69 -64 +58 -69 = -6
-					polyArr[i] = Instantiate(calphaPf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(180, -6, 0), chainArr[i / 3].transform);
+					polyArr[i] = Instantiate(calphaPf, (lastUnitTransform.position + offsetPositionUnit), 
+						lastUnitTransform.localRotation * Quaternion.Euler(0, 69, 0),chainArr[i/3].transform);
 					break;
 				case 5:
 					// Yrot = +69 -64 +58 -69 +64 = 58
-					polyArr[i] = Instantiate(carbonylPf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 58, 0), chainArr[i / 3].transform);
+					polyArr[i] = Instantiate(carbonylPf, (lastUnitTransform.position + offsetPositionUnit), 
+						lastUnitTransform.localRotation * Quaternion.Euler(180, -64, 0), chainArr[i/3].transform);
 					break;
 
 			}
@@ -319,9 +367,8 @@ public class PolyPepBuilder : MonoBehaviour {
 
 
   		PeptideData _pdd = myPeptideDataList[0];
-		polyArr[0].transform.position = new Vector3(_pdd.x,
-		                                               _pdd.y,
-							       _pdd.z);
+		//polyArr[0].transform.position = new Vector3(0,2,0);
+		polyArr[0].transform.position = new Vector3(_pdd.x, _pdd.y, _pdd.z);
 
                                 
 		for (int i = 1; i < polyLength; i++){
@@ -371,9 +418,7 @@ public class PolyPepBuilder : MonoBehaviour {
 //			    polyArr[i].transform.Rotate(polyArr[i].transform.right, dihd);
 // 			   polyArr[i].transform.position = (lastUnitTransform.position + lastUnitTransform.right * bondlength );
        		           PeptideData _pd = myPeptideDataList[i];
-			   polyArr[i].transform.position = new Vector3(_pd.x,
-			                                               _pd.y,
-								       _pd.z);
+			   polyArr[i].transform.position = new Vector3(_pd.x, _pd.y, _pd.z);
 			    }
 			   }
 
@@ -912,6 +957,133 @@ public void SetAllColliderIsTrigger(bool value)
 
 	}
 
+	void UpdateBackboneHbondConstraints()
+	{
+		for (int resid = 0; resid < numResidues; resid++)
+		{
+			UpdateBackboneHbondConstraint(resid);
+		}
+	}
+
+
+	public void UpdateBackboneHbondConstraint(int resid)
+	{
+		// hbonds implemented as three spring joints
+		// http://pubs.sciepub.com/ajme/3/2/3/
+		//
+		{
+			// H -> O
+			GameObject donorGO = GetAmideForResidue(resid);
+			SpringJoint sjHbond = donorGO.GetComponent(typeof(SpringJoint)) as SpringJoint;
+			hbondBackboneSj_HO[resid] = sjHbond;
+			//sjHbond.connectedBody = null;
+			//sjHbond.autoConfigureConnectedAnchor = false;
+			
+			// calculate anchor position from molecular geometry
+			//
+			//
+			//                       Z axis
+			//                       ^
+			//        \  122         |
+			//  119.5  N----         o---> X axis
+			//        /          
+			//       H          
+			//               
+			//
+			float axisRotOffset = -90f;
+			float thetaAmide = (float)((Mathf.Deg2Rad * ((122 + 119.5) + axisRotOffset)) * -1);
+			float NHBondLength = 1.0f;
+			
+			sjHbond.anchor = new Vector3(Mathf.Sin(thetaAmide) * NHBondLength, 0f, Mathf.Cos(thetaAmide) * NHBondLength);
+
+			// scale joint parameters to PolyPepBuilder and Amide_pf
+
+			float scale = gameObject.transform.localScale.x * donorGO.transform.localScale.x;
+			float HBondLength = hBondModelInnerLength;
+
+			sjHbond.minDistance = HBondLength * scale;
+			sjHbond.maxDistance = HBondLength * scale;
+			sjHbond.tolerance = HBondLength * scale * 0.1f;
+			sjHbond.enableCollision = true;
+		}
+
+		{
+			// H -> C
+			GameObject donorGO = GetAmideForResidue(resid);
+			SpringJoint sjHbond2 = donorGO.GetComponent(typeof(SpringJoint)) as SpringJoint;
+			hbondBackboneSj_HC[resid] = sjHbond2;
+			//sjHbond2.connectedBody = null;
+			//sjHbond2.autoConfigureConnectedAnchor = false;
+
+			// calculate anchor position from molecular geometry
+			//
+			//
+			//                       Z axis
+			//                       ^
+			//        \  122         |
+			//  119.5  N----         o---> X axis
+			//        /          
+			//       H          
+			//               
+			//
+			float axisRotOffset = -90f;
+			float thetaAmide = (float)((Mathf.Deg2Rad * ((122 + 119.5) + axisRotOffset)) * -1);
+			float NHBondLength = 1.0f;
+			sjHbond2.anchor = new Vector3(Mathf.Sin(thetaAmide) * NHBondLength, 0f, Mathf.Cos(thetaAmide) * NHBondLength);
+
+			// scale joint parameters to PolyPepBuilder and Amide_pf
+
+			float scale = gameObject.transform.localScale.x * donorGO.transform.localScale.x;
+			float HBondLength = hBondModelOuterLength;
+
+			sjHbond2.minDistance = HBondLength * scale;
+			sjHbond2.maxDistance = HBondLength * scale;
+			sjHbond2.tolerance = HBondLength * scale * 0.1f;
+			sjHbond2.enableCollision = true;
+		}
+
+		{
+			// N -> O
+			GameObject donorGO = GetAmideForResidue(resid);
+			SpringJoint sjHbond3 = donorGO.GetComponent(typeof(SpringJoint)) as SpringJoint;
+			hbondBackboneSj_NO[resid] = sjHbond3;
+			//sjHbond3.connectedBody = null;
+			//sjHbond3.autoConfigureConnectedAnchor = false;
+
+			// calculate anchor position from molecular geometry
+			//
+			//
+			//                       Z axis
+			//                       ^
+			//        \  122         |
+			//  119.5  N----         o---> X axis
+			//        /          
+			//       H          
+			//               
+			//
+			float axisRotOffset = -90f;
+			float thetaAmide = (float)((Mathf.Deg2Rad * ((122 + 119.5) + axisRotOffset)) * -1);
+			float NHBondLength = 1.0f;
+			sjHbond3.anchor = new Vector3(0f, 0f, 0f); //(Mathf.Sin(thetaAmide) * NHBondLength, 0f, Mathf.Cos(thetaAmide) * NHBondLength);
+
+			// scale joint parameters to PolyPepBuilder and Amide_pf
+
+			float scale = gameObject.transform.localScale.x * donorGO.transform.localScale.x;
+			float HBondLength = hBondModelOuterLength;
+
+			sjHbond3.minDistance = HBondLength * scale;
+			sjHbond3.maxDistance = HBondLength * scale;
+			sjHbond3.tolerance = HBondLength * scale * 0.1f;
+			sjHbond3.enableCollision = true;
+		}
+
+		SwitchOffBackboneHbondConstraint(resid);
+//		InitParticleSystemForHbond(resid);
+//		UpdateHbondParticleSystems();
+
+	}
+
+
 	void InitParticleSystemForHbond(int resid)
 	{
 		// create particle system for hbond
@@ -977,7 +1149,8 @@ public void SetAllColliderIsTrigger(bool value)
 
 	void UpdateHbonds()
 	{
-		float hbondCastScale = 3.0f; // length of cast in NH bond lengths ;)
+//	        float scale = GameObject.Find("Slider_Vdw").GetComponent<Slider>().value ;
+		float hbondCastScale = 3.0f  ; // length of cast in NH bond lengths ;)
 
 		for (int resid = 0; resid < numResidues; resid++)
 		{
