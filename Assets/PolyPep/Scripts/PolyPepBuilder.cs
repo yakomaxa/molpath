@@ -13,6 +13,11 @@ public class PeptideData
 	public string residPD;
 	public float phiPD;
 	public float psiPD;
+	public float omegaPD;
+	public float x;
+	public float y;
+	public float z;
+	
 }
 
 public class PolyPepBuilder : MonoBehaviour {
@@ -61,6 +66,7 @@ public class PolyPepBuilder : MonoBehaviour {
 
 	public JointDrive[] chainPhiJointDrives;
 	private JointDrive[] chainPsiJointDrives;
+    private JointDrive[] chainOmegaJointDrives;
 
 	public float hbondStrength = 0f; // updated by PolyPepManager
 
@@ -81,6 +87,8 @@ public class PolyPepBuilder : MonoBehaviour {
 
 	private bool disablePhiPsiUIInput = false;
 
+    private bool LockOmega = false;
+
 	Shader shaderStandard;
 	Shader shaderToonOutline;
 
@@ -95,8 +103,9 @@ public class PolyPepBuilder : MonoBehaviour {
 
 	{
 		// read peptide data from file
-		bool readExternalPeptideData = false; 
-		string filename = "Assets/PolyPep/Data/1l2y_phi_psi.txt";
+		bool readExternalPeptideData = true; 
+		string filename = "Assets/PolyPep/Data/1350_phi_psi_omega.txt";
+		//string filename = "Assets/PolyPep/Data/1350.pdb";
 
 		if (readExternalPeptideData)
 		{
@@ -148,7 +157,7 @@ public class PolyPepBuilder : MonoBehaviour {
 				PeptideData _pd = myPeptideDataList[i];
 				//Debug.Log(i + " " + _pd.residPD + " " + _pd.phiPD + " " + _pd.psiPD);
 				sideChainBuilder.BuildSideChain(gameObject, i, _pd.residPD);
-				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD);
+				SetPhiPsiTargetValuesForResidue(i, _pd.phiPD, _pd.psiPD, _pd.omegaPD);
 				chainArr[i].GetComponent<Residue>().drivePhiPsiOn = true;
 			}
 			UpdatePhiPsiDrives();
@@ -176,6 +185,7 @@ public class PolyPepBuilder : MonoBehaviour {
 			//
 			chainPhiJointDrives = new JointDrive[numResidues];
 			chainPsiJointDrives = new JointDrive[numResidues];
+			chainOmegaJointDrives = new JointDrive[numResidues];
 
 			for (int i = 0; i < numResidues; i++)
 			{
@@ -186,6 +196,11 @@ public class PolyPepBuilder : MonoBehaviour {
 				chainPsiJointDrives[i].maximumForce = 0.0f;
 				chainPsiJointDrives[i].positionDamper = 0;
 				chainPsiJointDrives[i].positionSpring = 0.0f;
+
+                chainOmegaJointDrives[i].maximumForce = 0.0f;
+                chainOmegaJointDrives[i].positionDamper = 0;
+                chainOmegaJointDrives[i].positionSpring = 0.0f;
+
 			}
 		}
 
@@ -222,7 +237,7 @@ public class PolyPepBuilder : MonoBehaviour {
 			{
 				case 0:
 					AddResidueToChain(i / 3);
-					polyArr[i] = Instantiate(amidePf, (lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 0, 0), chainArr[i/3].transform);
+					polyArr[i] = Instantiate(amidePf,(lastUnitTransform.position + offsetPositionUnit), transform.rotation * Quaternion.Euler(0, 0, 0),chainArr[i/3].transform);
 					break;
 				case 1:
 					// Yrot = +69
@@ -378,7 +393,7 @@ public class PolyPepBuilder : MonoBehaviour {
 		// physics collider should be constant radius and independent of rendering scale
 		// BUT in transform hierarchy the SphereCollider inherits the transform.localscale
 		// SO apply inverse scaling to SphereCollider to compensate
-		myAtom.GetComponent<SphereCollider>().radius = 1.1f * relativeRadiusAtomType / scaleVDW; 
+		//myAtom.GetComponent<SphereCollider>().radius = 1.1f * relativeRadiusAtomType / scaleVDW; 
 		// 1.1f is magic number
 
 	}
@@ -623,10 +638,56 @@ public void SetAllColliderIsTrigger(bool value)
 		else if (go1.tag == "carbonyl")
 		{
 			//peptide bond
-			cj.angularXMotion = ConfigurableJointMotion.Locked;
+            if (LockOmega)
+            {
+            			cj.angularXMotion = ConfigurableJointMotion.Locked;
+            }
+            else
+            {
+                        cj.angularXMotion = ConfigurableJointMotion.Free;
+                        cj.angularXDrive = chainOmegaJointDrives[index / 3];
+                        cj.targetRotation = Quaternion.Euler(180 + 180, 0, 0); // default to 0 omega
+            }
 		}
 		cj.angularYMotion = ConfigurableJointMotion.Locked;
 		cj.angularZMotion = ConfigurableJointMotion.Locked;
+	}
+
+
+	public void UpdateBackboneTopologyConstraint(int index, float scale)
+	{
+
+		// 
+		// adds a configurable joint between backbone prefabs
+		//
+
+		Assert.IsTrue((index > 0), "Assertion failed");
+
+		GameObject go1 = polyArr[index - 1];
+		GameObject go2 = polyArr[index];
+
+
+		float bondLengthPeptide = 1.33f *scale;
+		float bondLengthAmideCalpha = 1.46f *scale;
+		float bondLengthCalphaCarbonyl = 1.51f *scale;
+
+                ConfigurableJoint cj = go1.GetComponent(typeof(ConfigurableJoint)) as ConfigurableJoint;
+		//cj = go1.GetComponent<ConfigurableJoint>();
+		cj.connectedBody = go2.GetComponent<Rigidbody>();
+		if (go1.tag == "amide")
+		{
+			cj.anchor = new Vector3(bondLengthAmideCalpha, 0f, 0f);
+		}
+		else if (go1.tag == "calpha")
+		{
+			cj.anchor = new Vector3(bondLengthCalphaCarbonyl, 0f, 0f);
+		}
+		else if (go1.tag == "carbonyl")
+		{
+			cj.anchor = new Vector3(bondLengthPeptide, 0f, 0f);
+		}
+//		cj.autoConfigureConnectedAnchor = false;
+//		cj.connectedAnchor = new Vector3(0f, 0f, 0f);
 	}
 
 	void AddDistanceConstraint(GameObject sourceGO, GameObject targetGO, float distance, int springStrength)
@@ -1199,7 +1260,7 @@ public void SetAllColliderIsTrigger(bool value)
 		UpdatePhiPsiDrives();
 	}
 
-	public void SetPhiPsiTargetValuesForSelection(float phi, float psi)
+	public void SetPhiPsiTargetValuesForSelection(float phi, float psi,float omega)
 	{
 		// use 'painted' selection from controller i.e. controllerSelectOn
 		for (int resid = 0; resid < numResidues; resid++)
@@ -1207,25 +1268,33 @@ public void SetAllColliderIsTrigger(bool value)
 			Residue residue = chainArr[resid].GetComponent<Residue>();
 			if  (residue.IsResidueSelected())
 			{
-				SetPhiPsiTargetValuesForResidue(resid, phi, psi);
+				SetPhiPsiTargetValuesForResidue(resid, phi, psi, omega);
 				residue.drivePhiPsiOn = true;
 			}
 		}
 		UpdatePhiPsiDrives();
 	}
 
-	void SetPhiPsiTargetValuesForResidue(int resid, float phi, float psi)
+	public void SetPhiPsiTargetValuesForResidue(int resid, float phi, float psi, float omega)
 	{
 		Residue residue = chainArr[resid].GetComponent<Residue>();
 
 		residue.phiTarget = phi;
 		residue.psiTarget = psi;
+        residue.omegaTarget = omega;
 
 		var cjPhi_NCa = GetAmideForResidue(resid).GetComponent<ConfigurableJoint>();
 		cjPhi_NCa.targetRotation = Quaternion.Euler(180.0f - phi, 0, 0);
 
 		var cjPsi_CaCO = GetCalphaForResidue(resid).GetComponent<ConfigurableJoint>();
 		cjPsi_CaCO.targetRotation = Quaternion.Euler(180.0f - psi, 0, 0);
+
+        if (!LockOmega) {
+                var cjOmega_CON = GetCarbonylForResidue(resid).GetComponent<ConfigurableJoint>();
+                cjOmega_CON.targetRotation = Quaternion.Euler(180.0f - omega, 0, 0);
+
+                 }
+
 	}
 
 	void UpdatePhiPsiDriveParamForResidue(int resid)
@@ -1235,6 +1304,11 @@ public void SetAllColliderIsTrigger(bool value)
 
 		var cjPsi_CaCO = GetCalphaForResidue(resid).GetComponent<ConfigurableJoint>();
 		cjPsi_CaCO.angularXDrive = chainPsiJointDrives[resid];
+
+        if (!LockOmega) {
+                var cjOmega_CON = GetCarbonylForResidue(resid).GetComponent<ConfigurableJoint>();
+                cjOmega_CON.angularXDrive = chainOmegaJointDrives[resid];
+        }
 
 		// wake rbs
 		// (sleeping rbs don't respond to changes in joint params)
@@ -1277,6 +1351,13 @@ public void SetAllColliderIsTrigger(bool value)
 				chainPsiJointDrives[resid].maximumForce = residue.drivePhiPsiTorqValue;
 				chainPsiJointDrives[resid].positionDamper = drivePhiPsiPosDamper;
 				chainPsiJointDrives[resid].positionSpring = residue.drivePhiPsiTorqValue;
+                if (!LockOmega)
+                {
+                    chainOmegaJointDrives[resid].maximumForce = residue.drivePhiPsiTorqValue * 100.0f;
+                    chainOmegaJointDrives[resid].positionDamper = drivePhiPsiPosDamper * 100.0f;
+                    chainOmegaJointDrives[resid].positionSpring = residue.drivePhiPsiTorqValue*100.0f;
+                }
+
 				//Debug.Log("PhiPsi Drive = ON ");
 			}
 			else
@@ -1291,6 +1372,12 @@ public void SetAllColliderIsTrigger(bool value)
 				chainPsiJointDrives[resid].positionDamper = drivePhiPsiPosDamperPassive;
 				chainPsiJointDrives[resid].positionSpring = 0.0f;
 				//Debug.Log("PhiPsi Drive = OFF ");
+                if (!LockOmega)
+                {
+                    chainOmegaJointDrives[resid].maximumForce = 0.0f;
+                    chainOmegaJointDrives[resid].positionDamper = drivePhiPsiPosDamperPassive ;
+                    chainOmegaJointDrives[resid].positionSpring = 0.0f;
+                }
 			}
 
 			UpdatePhiPsiDriveParamForResidue(resid);
@@ -1351,7 +1438,9 @@ public void SetAllColliderIsTrigger(bool value)
 						// In this example, I split it into arguments based on comma
 						// deliniators, then send that array to DoStuff()
 						Debug.Log(line);
-						ParsePhiPsi(line);
+						//ParsePhiPsi(line);
+						ParsePhiPsiOmega(line);
+						//ParseATOMline(line);
 						string[] entries = line.Split(',');
 						if (entries.Length > 0)
 						{
@@ -1391,6 +1480,7 @@ public void SetAllColliderIsTrigger(bool value)
 		int myResid = int.Parse(residSplit[0]);
 		float myPhi = float.Parse(line.Substring(12, 7));
 		float myPsi = float.Parse(line.Substring(20, 7));
+        float myOmega = 180.0f ;
 
 		if (myResid == 2)
 		{
@@ -1399,6 +1489,7 @@ public void SetAllColliderIsTrigger(bool value)
 			_peptideData.residPD = "XXX";
 			_peptideData.phiPD = 0f;
 			_peptideData.psiPD = 0f;
+            _peptideData.omegaPD = 0f;
 			myPeptideDataList.Add(_peptideData);
 		}
 
@@ -1413,6 +1504,7 @@ public void SetAllColliderIsTrigger(bool value)
 			_peptideData.residPD = resName;
 			_peptideData.phiPD = myPhi;
 			_peptideData.psiPD = myPsi;
+            _peptideData.omegaPD = myOmega;
 			myPeptideDataList.Add(_peptideData);
 		}
 
@@ -1420,6 +1512,141 @@ public void SetAllColliderIsTrigger(bool value)
 		//SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
 		numResidues = myResid;
 	}
+
+
+	private void ParsePhiPsiOmega(string line)
+	{
+                // format
+		// "    2 A L G     0.00   91.60  179.79"
+
+                string commentchar = line.Substring(0, 1);		
+		if(commentchar=="#"){
+		         Debug.Log("comment line");
+		}
+		else
+		{
+			int myResid = int.Parse(line.Substring(0, 5));		
+			string resName1 = line.Substring(6, 1); // later write function to A -> ALA and so on.
+			string sstype = line.Substring(8, 1);
+			string abego = line.Substring(10, 1);	
+			float myPhi = float.Parse(line.Substring(13, 7));
+			float myPsi = float.Parse(line.Substring(21, 7));
+			float myOmega = float.Parse(line.Substring(29, 7));			
+//		float myOmega = 180.0f ;
+        	        string resName = "XXX";
+
+			if (myResid == 0)
+			{
+			// add default data for resid 1
+			   PeptideData _peptideData = new PeptideData();
+      			   _peptideData.residPD = "XXX";
+			   _peptideData.phiPD = 0f;
+			   _peptideData.psiPD = 0f;
+			   _peptideData.omegaPD = 0f;
+			   myPeptideDataList.Add(_peptideData);
+			}
+
+			Debug.Log("  resname = " + resName);
+			Debug.Log("  resid = " + myResid);
+			Debug.Log("  phi = " + myPhi);
+			Debug.Log("  psi = " + myPsi);
+			
+			{
+			// add data for current resid
+			   PeptideData _peptideData = new PeptideData();
+			   _peptideData.residPD = resName;
+			   _peptideData.phiPD = myPhi;
+			   _peptideData.psiPD = myPsi;
+			   _peptideData.omegaPD = myOmega;
+			   myPeptideDataList.Add(_peptideData);
+			 }
+			 //SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
+			 numResidues = myResid;
+		}
+	}
+
+	private void ParseATOMline(string line)
+	{
+		//
+		// parses ATOM line from "beautiful" PDB file, which do not have any alternate coordinate or insertion codes or so.
+		// PDB format is getting out of date...
+		// format
+		// ATOM      1  N   ASN A   1     -11.884  -4.563   1.671  1.00  0.00           N
+		// ATOM      2  CA  ASN A   1     -11.548  -3.240   1.083  1.00  0.00           C
+		// ATOM      3  C   ASN A   1     -12.808  -2.482   0.678  1.00  0.00           C
+		// ATOM      4  O   ASN A   1     -13.341  -2.682  -0.414  1.00  0.00           O
+		// ATOM      5  CB  ASN A   1     -10.649  -3.461  -0.136  1.00  0.00           C
+		// ATOM = substring(0,6)
+		
+		// FROM : https://www.wwpdb.org/documentation/file-format-content/format33/sect9.html		
+		// Record Format
+		// COLUMNS        DATA  TYPE    FIELD        DEFINITION
+		// -------------------------------------------------------------------------------------
+		//  1 -  6        Record name   "ATOM  "
+		//  7 - 11        Integer       serial       Atom  serial number.
+		// 13 - 16        Atom          name         Atom name.
+		// 17             Character     altLoc       Alternate location indicator.
+		// 18 - 20        Residue name  resName      Residue name.
+		// 22             Character     chainID      Chain identifier.
+		// 23 - 26        Integer       resSeq       Residue sequence number.
+		// 27             AChar         iCode        Code for insertion of residues.
+		// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+		// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+		// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+		// 55 - 60        Real(6.2)     occupancy    Occupancy.
+		// 61 - 66        Real(6.2)     tempFactor   Temperature  factor.
+		// 77 - 78        LString(2)    element      Element symbol, right-justified.
+		// 79 - 80        LString(2)    charge       Charge  on the atom.
+		
+		string commentchar = line.Substring(0, 4);		
+		if(commentchar!="ATOM"){
+		         Debug.Log("Non-ATOM line skipped");
+		}
+		else
+		{       // note column name start from 0, so N - 1 is head of column
+		        string atom      = line.Substring(0, 6);
+			int    serial    = int.Parse(line.Substring(6, 5));
+			string name      = line.Substring(12, 4);
+			string altLoc    = line.Substring(16, 1);
+			string resName   = line.Substring(17, 3); 
+			string chainID   = line.Substring(21, 1);
+			int    resSeq    = int.Parse(line.Substring(22, 4));
+			string iCode     = line.Substring(26, 1);
+			float  xCoord    = float.Parse(line.Substring(30, 8));
+			float  yCoord    = float.Parse(line.Substring(38, 8));
+			float  zCoord    = float.Parse(line.Substring(46, 8));
+			float  occupancy = float.Parse(line.Substring(54, 6));
+			float  tempFactor= float.Parse(line.Substring(60, 6));
+			string element   = line.Substring(76, 2);
+			string charge    = line.Substring(78, 2);
+			
+			{  // DO SOMETHING HERE TO STORE DATA SOMEWHERE.
+			   // Natural objects in Peppy are Amide, Calpha, Carbonyl units
+			   //PeptideData _peptideData = new PeptideData();
+			   //_peptideData.residPD = resName;
+			   //_peptideData.x = xCoord;
+			   //_peptideData.y = yCoord;
+   			   //_peptideData.z = zCoord;
+			   //_peptideData.omegaPD = myOmega;
+			   //myPeptideDataList.Add(_peptideData);
+   			   Debug.Log("  atom = " + atom);
+		      	   Debug.Log("  serial = " + serial);
+   		      	   Debug.Log("  name = " + name);
+      		      	   Debug.Log("  altLoc = " + altLoc);
+       		      	   Debug.Log("  resName = " + resName);
+       		      	   Debug.Log("  chainID = " + chainID);
+       		      	   Debug.Log("  resSeq = " + resSeq);
+       		      	   Debug.Log("  iCode = " + iCode);
+       		      	   Debug.Log("  xCoord = " + xCoord);
+       		      	   Debug.Log("  yCoord = " + yCoord);
+       		      	   Debug.Log("  zCoord = " + zCoord);			   			   			   
+			 }
+			 //SetPhiPsiTargetValuesForResidue(myResid, myPhi, myPsi);
+			 //numResidues = myResid;
+		}
+	}
+
+
 
 	public void UpdateResidueSelectionStartFromUI()
 	{

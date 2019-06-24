@@ -3,12 +3,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-
 public class PolyPepManager : MonoBehaviour {
-
 
 	public GameObject polyPepBuilder_pf;
 	public List<PolyPepBuilder> allPolyPepBuilders = new List<PolyPepBuilder>();
+	public List<SideChainBuilder> allSideChainBuilders = new List<SideChainBuilder>();
 
 	public SideChainBuilder sideChainBuilder;
 	public ElectrostaticsManager electrostaticsManager;
@@ -28,6 +27,7 @@ public class PolyPepManager : MonoBehaviour {
 
 	public float phiTarget = 0f;
 	public float psiTarget = 0f;
+	public float omegaTarget = 180.0f;
 	public float phiPsiDriveTorqueFromUI = 100.0f;
 
 	public bool showDrivenBondsOn = true;
@@ -154,12 +154,7 @@ public class PolyPepManager : MonoBehaviour {
 
 
 		snapshotCameraResetTransform = GameObject.Find("CameraResetPos").transform;
-
 		myPlayerController = GameObject.Find("OVRPlayerController");
-		if (!myPlayerController)
-		{
-			myPlayerController = GameObject.Find("PlayerNonVR");
-		}
 
 		mySnapshotCamera = GameObject.Find("SnapshotCamera_pf");
 
@@ -364,11 +359,49 @@ public class PolyPepManager : MonoBehaviour {
 
 		//Debug.Log("hello from the manager! ---> " + scaleVDWx10);
 		vdwScale = scaleVDWx10 / 10.0f;
-		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+//		vdwScale = 1.0f; fixing scale
+//		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+//		{
+//			_ppb.ScaleVDW(vdwScale);
+//              }
+
+                foreach ( PolyPepBuilder _ppb in allPolyPepBuilders)
 		{
-			_ppb.ScaleVDW(vdwScale);
-		}
+			Vector3 size = new Vector3(0f,0f,0f);
+			size.x = vdwScale;
+			size.y = vdwScale;
+			size.z = vdwScale;
+			_ppb.transform.localScale = size;
+                         for (int ii = 1 ; ii < _ppb.numResidues*3 ; ii++)
+		         {
+//			  _ppb.UpdateBackboneTopologyConstraint(ii,vdwScale);
+			  _ppb.UpdateBackboneTopologyConstraint(ii,1.0f);
+								
+		         }
+
+                         for (int ii = 0 ; ii < _ppb.numResidues ; ii++){
+		             Residue residue = _ppb.chainArr[ii].GetComponent<Residue>();
+			     Vector3 ss = residue.myPlotCube.transform.lossyScale;
+		             //ss.x = ss.x * vdwScale;
+    		             ss.x = ss.x *0.01f ;
+     		             ss.y = ss.y / vdwScale ;
+      		             ss.z = ss.z / vdwScale ;
+      		             //ss.y = ss.y * vdwScale;
+      		             //ss.z = ss.z * vdwScale;
+		             residue.myPlotCube.transform.localScale = new Vector3(ss.x,ss.y,ss.z);
+			     residue.myPlotCubeLabel.transform.localScale = ss;
+			     //_ppb.SetPhiPsiTargetValuesForResidue(ii, -45.0f, -60.0f, 180.0f);
+			     //_ppb.chainArr[ii].GetComponent<Residue>().drivePhiPsiOn = true;
+//			     myPlotCubeLabel
+		         }
+//                       _ppb.UpdatePhiPsiDrives();
+		    
+	         
 	}
+//	}
+}
+
+	
 
 	public void UpdateCollidersFromUI(bool value)
 	{
@@ -508,6 +541,7 @@ public class PolyPepManager : MonoBehaviour {
 	{
 		float phi = phiTarget;
 		float psi = psiTarget;
+        float omega = omegaTarget;
 		//switch (UIDefinedSecondaryStructure)
 		switch (value)
 		{
@@ -515,47 +549,55 @@ public class PolyPepManager : MonoBehaviour {
 				// not defined
 				phi = phiTarget;
 				psi = psiTarget;
+                omega = omegaTarget;
 				break;
 
 			case 1:     
 				//alpha helix (right handed) (phi + ps ~ -105)
 				phi = -57.0f;
 				psi = -47.0f;
+                omega = 180.0f;
 				break;
 
 			case 2:     
 				//310 helix (phi + psi ~ -75)
 				phi = -49.0f;// -74.0f;
 				psi = -26.0f;// -4.0f;
+                omega = 180.0f;
 				break;
 
 			case 3:     
 				//anti beta sheet
 				phi = -139.0f;
 				psi = 135.0f;
+                omega = 180.0f;
 				break;
 
 			case 4:     
 				//parallel beta sheet
 				phi = -119.0f;
 				psi = 113.0f;
+                omega = 180.0f;
 				break;
 
 			case 5:     
 				//pi helix (phi + ps ~ -125)
 				phi = -55.0f;
 				psi = -70.0f;
+                omega = 180.0f;
 				break;
 
 			case 6:     
 				//alpha helix (left handed)
 				phi = 47.0f;
 				psi = 57.0f;
+                omega = 180.0f;
 				break;
 		}
 
 		phiTarget = phi;
 		psiTarget = psi;
+        omegaTarget = omega;
 		
 		phiSliderUI.value = phi;
 		psiSliderUI.value = psi;
@@ -581,7 +623,7 @@ public class PolyPepManager : MonoBehaviour {
 	{
 		foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
 		{
-			_ppb.SetPhiPsiTargetValuesForSelection(phiTarget, psiTarget);
+			_ppb.SetPhiPsiTargetValuesForSelection(phiTarget, psiTarget, omegaTarget);
 		}
 	}
 
@@ -879,7 +921,6 @@ public class PolyPepManager : MonoBehaviour {
 		// hacky repositioning lerp to keep things from getting lost...
 		// TODO - bounding box for play area?
 		Vector3 offSet = go.transform.position - myPlayerController.transform.position;
-		
 
 		//Debug.Log(offSet.magnitude);
 		if (offSet.magnitude > maxDistance)
@@ -908,27 +949,114 @@ public class PolyPepManager : MonoBehaviour {
 		SceneManager.LoadScene(m_Scene.name);
 	}
 
+        public void DumpXYZ(){
+               foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+               {
+                 int nres = _ppb.numResidues;
+		 for ( int resid = 1; resid < nres; resid++)
+		  {
+                   GameObject amide = _ppb.GetAmideForResidue(resid);
+                   Vector3 x10am = amide.transform.position * 10.0f ;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10am.ToString());
+
+		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
+                   Debug.Log("print position" + calpha.transform.position);
+                   Vector3 x10ca = calpha.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10ca.ToString());
+
+		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
+                   Debug.Log("print position" + carbonyl.transform.position);
+                   Vector3 x10car = carbonyl.transform.position * 10.0f;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10car.ToString());
+		   }
+
+        	}
+	}
+
+        public void DumpXYZ2(){
+               foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+               {
+                 int nres = _ppb.numResidues;
+		 float scale = GameObject.Find("Slider_Vdw").GetComponent<Slider>().value / 10.0f;		
+//		 vdwSliderUI = temp.GetComponent<Slider>();
+		 for ( int resid = 1; resid < nres; resid++)
+		  {
+                   GameObject amide = _ppb.GetAmideForResidue(resid);
+                   Vector3 x10am = amide.transform.position * 10.0f / scale;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10am.ToString());
+
+		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
+                   Debug.Log("print position" + calpha.transform.position);
+                   Vector3 x10ca = calpha.transform.position * 10.0f / scale;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10ca.ToString());
+
+		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
+                   Debug.Log("print position" + carbonyl.transform.position);
+                   Vector3 x10car = carbonyl.transform.position * 10.0f / scale;
+                   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10car.ToString());
+
+                   Vector3 x10posCO = carbonyl.transform.Find("tf_O/O_carbonyl").position * 10.0f / scale;
+		   System.IO.File.AppendAllText("Assets/Resources/out.txt", x10posCO.ToString());
+		   }
+
+        	}
+	}
+
+        public void DumpPDB(){
+	/// ATOM      1  N   ASN A   1     -11.884  -4.563   1.671  1.00  0.00           N
+	
+               foreach (PolyPepBuilder _ppb in allPolyPepBuilders)
+               {
+                 int nres = _ppb.numResidues;
+		 float scale = GameObject.Find("Slider_Vdw").GetComponent<Slider>().value / 10.0f;		
+//		 vdwSliderUI = temp.GetComponent<Slider>();
+
+//                 String.Format("{0, -5:G}, {1:G3}, {2:N1}", 10, 12345, 12.345);
+                 int count =0;
+		 for ( int resid = 1; resid < nres; resid++)
+		  {
+		   count=count+1;
+                   GameObject amide = _ppb.GetAmideForResidue(resid);
+                   Vector3 x10am = amide.transform.position * 10.0f / scale;
+//		   string s = System.String.Format("ATOM  {0, 5}{1, 4}ALA  {2, 1}{3, 4} {0, 8:F3}{0, 8:F3}{0, 8:F3}",count,"N","A",resid,x10am.x,x10am.y,x10am.z);
+                   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
+		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
+		   "ATOM",count," "," ","N","ALA"," ","A",resid," ",x10am.x,x10am.y,-x10am.z));
+
+		   count=count+1;
+		   GameObject calpha = _ppb.GetCalphaForResidue(resid);
+                   Debug.Log("print position" + calpha.transform.position);
+                   Vector3 x10ca = calpha.transform.position * 10.0f / scale;
+		   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
+   		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
+   		   "ATOM",count," "," ","CA","ALA"," ","A",resid," ",x10ca.x,x10ca.y,-x10ca.z));
+
+		   count=count+1;
+		   GameObject carbonyl = _ppb.GetCarbonylForResidue(resid);
+                   Debug.Log("print position" + carbonyl.transform.position);
+                   Vector3 x10car = carbonyl.transform.position * 10.0f / scale;
+   		   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
+     		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
+		   "ATOM",count," "," ","C","ALA"," ","A",resid," ",x10car.x,x10car.y,-x10car.z));
+
+//                   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb", x10car.ToString());
+		   count=count+1;
+                   Vector3 x10posCO = carbonyl.transform.Find("tf_O/O_carbonyl").position * 10.0f / scale;
+   		   System.IO.File.AppendAllText("Assets/Resources/peppy.pdb",
+      		   System.String.Format("{0,4}{1, 7}{2,1}{3,1}{4,-4}{5,3}{6,1}{7,1}{8, 4}{9,4}{10, 8:F3}{11, 8:F3}{12, 8:F3}\n",
+   		   "ATOM",count," "," ","O","ALA"," ","A",resid," ",x10posCO.x,x10posCO.y,-x10posCO.z));
+
+
+		   }
+
+        	}
+	}
+
+
 	public void AppQuit()
 	{
 		Debug.Log("Application.Quit");
 		Application.Quit();
-	}
-
-	public void SwitchLevel()
-	{
-		Scene m_Scene = SceneManager.GetActiveScene();
-		Debug.Log("Currently in... " + m_Scene.name);
-
-		//switch (m_Scene.name)
-		//{
-		//	case "Scene_VR":
-		//		SceneManager.LoadScene("Scene_nonVR");
-		//		break;
-		//	case "Scene_nonVR":
-		//		SceneManager.LoadScene("Scene_VR");
-		//		break;
-		//}
-		SceneManager.LoadScene("FrontEnd");
 	}
 
 	// Update is called once per frame
@@ -938,17 +1066,19 @@ public class PolyPepManager : MonoBehaviour {
 		UpdatePanel03Pos();
 		UpdatePanelInfoPos();
 		UpdatePanelControlsPos();
-		UpdateKeepGameObjectAccessible(UI, 0.4f, 5.0f);
-		UpdateKeepGameObjectCloseToPlayer(UI, 6.0f);
-		UpdateKeepGameObjectAccessible(mySnapshotCamera, 0.2f, 5.0f);
-		UpdateKeepGameObjectCloseToPlayer(mySnapshotCamera, 10.0f);
+		//pUpdateKeepGameObjectAccessible(UI, 0.4f, 5.0f);
+		//UpdateKeepGameObjectCloseToPlayer(UI, 6.0f);
+		//UpdateKeepGameObjectAccessible(mySnapshotCamera, 0.2f, 5.0f);
+		//UpdateKeepGameObjectCloseToPlayer(mySnapshotCamera, 10.0f);
+	        if (Input.GetKey(KeyCode.P))
+		{
+		       DumpPDB();
+		       }
+		
+		
 		if (Input.GetKey(KeyCode.Escape))
 		{
 			AppQuit();
-		}
-		if (Input.GetKeyDown(KeyCode.Backspace))
-		{
-			SwitchLevel();
 		}
 	}
 }
