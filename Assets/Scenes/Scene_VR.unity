@@ -15353,7 +15353,7 @@ MonoBehaviour:
   m_parentHeldObject: 0
   m_gripTransform: {fileID: 582038376}
   m_grabVolumes: []
-  m_controller: 0
+  m_controller: 1
   m_parentTransform: {fileID: 0}
 --- !u!54 &582038378
 Rigidbody:
@@ -52652,10 +52652,10 @@ MonoBehaviour:
   m_FillRect: {fileID: 741816783}
   m_HandleRect: {fileID: 1348354640}
   m_Direction: 0
-  m_MinValue: 5
-  m_MaxValue: 30
+  m_MinValue: 0.1
+  m_MaxValue: 10
   m_WholeNumbers: 0
-  m_Value: 5
+  m_Value: 1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
